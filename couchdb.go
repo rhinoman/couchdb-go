@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Auth struct{ username, password string }
+type Auth struct{ Username, Password string }
 
 type Connection struct {
 	*connection
@@ -44,8 +44,8 @@ func createConnection(rawUrl string, auth Auth, timeout time.Duration) (*Connect
 		&connection{
 			url:      theUrl.String(),
 			client:   &http.Client{Timeout: timeout},
-			username: auth.username,
-			password: auth.password,
+			username: auth.Username,
+			password: auth.Password,
 		},
 	}, nil
 
@@ -68,5 +68,23 @@ func (conn *Connection) AllDBs() (dbList []string, err error) {
 	}
 	err = parseBody(resp, &dbList)
 	return dbList, err
+}
+
+//Create a new Database
+func (conn *Connection) CreateDB (name string) error {
+	resp, err := conn.request("PUT", cleanPath(name), nil)
+	if err == nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+//Delete a Database
+func (conn *Connection) DeleteDB (name string) error {
+	resp, err := conn.request("DELETE", cleanPath(name), nil)
+	if err == nil {
+		resp.Body.Close()
+	}
+	return err
 }
 

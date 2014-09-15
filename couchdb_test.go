@@ -16,6 +16,17 @@ func getConnection(t *testing.T) *Connection {
 	}
 	return conn
 }
+
+func getAuthConnection(t *testing.T) *Connection {
+	auth := Auth{Username: "adminuser", Password: "password"}
+	conn, err := NewConnection("maui-test", 5984, auth, timeout)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.Fail()
+	}
+	return conn
+}
+
 func errorify(t *testing.T, err error){
 	if err != nil {
 		t.Logf("ERROR: %v", err)
@@ -50,4 +61,18 @@ func TestAllDBs(t *testing.T) {
 			t.Logf("Database %v: %v\n",i,dbName)
 		}
 	}
+}
+
+func TestCreateDB(t *testing.T){
+	conn := getAuthConnection(t)
+	err := conn.CreateDB("unittestdb")
+	errorify(t, err)
+	//try to create it again --- should fail
+	err = conn.CreateDB("unittestdb")
+	if err == nil{
+		t.Fail()
+	}
+	//now delete it
+	err = conn.DeleteDB("unittestdb")
+	errorify(t,err)
 }

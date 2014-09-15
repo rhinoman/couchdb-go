@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 //represents a couchdb 'connection'
@@ -86,4 +87,14 @@ func parseError(resp *http.Response) error {
 		ErrorCode:  couchReply.Error,
 		Reason:     couchReply.Reason,
 	}
+}
+
+//Sanitize path args
+func cleanPath(pathSegments ...string) string {
+	cleaned := ""
+	for _, pathSegment := range pathSegments {
+		cleaned += "/"
+		cleaned += url.QueryEscape(pathSegment)
+	}
+	return cleaned
 }
