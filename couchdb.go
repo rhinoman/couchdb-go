@@ -5,11 +5,11 @@ package couchdb
 
 import (
 	"fmt"
+	"github.com/twinj/uuid"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
-	"github.com/twinj/uuid"
 )
 
 type Auth struct{ Username, Password string }
@@ -74,7 +74,7 @@ func (conn *Connection) GetDBList() (dbList []string, err error) {
 }
 
 //Create a new Database
-func (conn *Connection) CreateDB (name string) error {
+func (conn *Connection) CreateDB(name string) error {
 	resp, err := conn.request("PUT", cleanPath(name), nil)
 	if err == nil {
 		resp.Body.Close()
@@ -83,7 +83,7 @@ func (conn *Connection) CreateDB (name string) error {
 }
 
 //Delete a Database
-func (conn *Connection) DeleteDB (name string) error {
+func (conn *Connection) DeleteDB(name string) error {
 	resp, err := conn.request("DELETE", cleanPath(name), nil)
 	if err == nil {
 		resp.Body.Close()
@@ -95,23 +95,23 @@ func (conn *Connection) DeleteDB (name string) error {
 
 //Create a new document. 
 //returns the id and rev of the newly created document
-func (conn *Connection) CreateDoc (dbName string,
-	doc interface{})(id string, rev string, err error) {
-	id = uuid.Formatter(uuid.NewV4(),uuid.Clean)
+func (conn *Connection) CreateDoc(dbName string,
+	doc interface{}) (id string, rev string, err error) {
+	id = uuid.Formatter(uuid.NewV4(), uuid.Clean)
 	data, err := encodeData(doc)
 	if err != nil {
-		return "","", err
+		return "", "", err
 	}
 	resp, err := conn.request("PUT", cleanPath(dbName, id), data)
 	if err != nil {
-		return "","",err
-	} else if rev = resp.Header.Get("ETag"); rev == ""{
-			return "","",fmt.Errorf("Bad response from CouchDB")
+		return "", "", err
+	} else if rev = resp.Header.Get("ETag"); rev == "" {
+		resp.Body.Close()
+		return "", "", fmt.Errorf("Bad response from CouchDB")
 	} else {
 		resp.Body.Close()
-		rev = rev[1:len(rev)-1] //remove the "" from the ETag
+		rev = rev[1 : len(rev)-1] //remove the "" from the ETag
 		return id, rev, nil
 	}
 
 }
-

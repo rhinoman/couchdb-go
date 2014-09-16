@@ -4,13 +4,13 @@ package couchdb
 //Description: Lower level stuff happens here, should not be used directly
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"bytes"
 )
 
 //represents a couchdb 'connection'
@@ -30,7 +30,7 @@ func addBasicAuthHeaders(username string, password string, req *http.Request) {
 
 //processes a request
 func (conn *connection) request(method, path string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, conn.url + path, body)
+	req, err := http.NewRequest(method, conn.url+path, body)
 	//set headers
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

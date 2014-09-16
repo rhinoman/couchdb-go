@@ -2,9 +2,9 @@ package couchdb_test
 
 import (
 	. "github.com/rhinoman/couchdb-go"
+	"strconv"
 	"testing"
 	"time"
-	"strconv"
 )
 
 var timeout = time.Duration(500 * time.Millisecond)
@@ -13,8 +13,8 @@ var server = "maui-test"
 var numDbs = 1
 
 type TestDocument struct {
-	Title	string
-	Note	string
+	Title string
+	Note  string
 }
 
 func getConnection(t *testing.T) *Connection {
@@ -36,12 +36,12 @@ func getAuthConnection(t *testing.T) *Connection {
 	return conn
 }
 
-func createTestDb(t *testing.T) (string) {
+func createTestDb(t *testing.T) string {
 	conn := getAuthConnection(t)
 	dbName := unittestdb + strconv.Itoa(numDbs)
 	err := conn.CreateDB(dbName)
 	errorify(t, err)
-	numDbs +=1
+	numDbs += 1
 	return dbName
 }
 
@@ -51,7 +51,7 @@ func deleteTestDb(t *testing.T, dbName string) {
 	errorify(t, err)
 }
 
-func errorify(t *testing.T, err error){
+func errorify(t *testing.T, err error) {
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -82,31 +82,31 @@ func TestGetDBList(t *testing.T) {
 		t.Fail()
 	} else {
 		for i, dbName := range dbList {
-			t.Logf("Database %v: %v\n",i,dbName)
+			t.Logf("Database %v: %v\n", i, dbName)
 		}
 	}
 }
 
-func TestCreateDB(t *testing.T){
+func TestCreateDB(t *testing.T) {
 	conn := getAuthConnection(t)
 	err := conn.CreateDB("testcreatedb")
 	errorify(t, err)
 	//try to create it again --- should fail
 	err = conn.CreateDB("testcreatedb")
-	if err == nil{
+	if err == nil {
 		t.Fail()
 	}
 	//now delete it
 	err = conn.DeleteDB("testcreatedb")
-	errorify(t,err)
+	errorify(t, err)
 }
 
-func TestCreateDoc(t *testing.T){
+func TestCreateDoc(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
 	theDoc := TestDocument{
 		Title: "My Document",
-		Note: "This is my note",
+		Note:  "This is my note",
 	}
 	id, rev, err := conn.CreateDoc(dbName, theDoc)
 	errorify(t, err)
