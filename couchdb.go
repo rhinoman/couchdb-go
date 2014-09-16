@@ -94,8 +94,7 @@ func (conn *Connection) DeleteDB (name string) error {
 //DOCUMENTS
 
 //Create a new document. 
-//'doc' is expected to have an _id field and a _rev field 
-//These fields should be empty, and will be updated after the document is saved
+//returns the id and rev of the newly created document
 func (conn *Connection) CreateDoc (dbName string,
 	doc interface{})(id string, rev string, err error) {
 	id = uuid.Formatter(uuid.NewV4(),uuid.Clean)
