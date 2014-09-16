@@ -108,6 +108,7 @@ func (conn *Connection) CreateDoc (dbName string,
 	} else if rev = resp.Header.Get("ETag"); rev == ""{
 			return "","",fmt.Errorf("Bad response from CouchDB")
 	} else {
+		rev = rev[1:len(rev)-1] //remove the "" from the ETag
 		parseBody(resp, &doc)
 		return id, rev, nil
 	}
