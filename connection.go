@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"bytes"
 )
 
 //represents a couchdb 'connection'
@@ -30,6 +31,10 @@ func addBasicAuthHeaders(username string, password string, req *http.Request) {
 //processes a request
 func (conn *connection) request(method, path string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, conn.url + path, body)
+	//set headers
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +76,26 @@ func parseBody(resp *http.Response, o interface{}) error {
 	}
 }
 
+//encodes a struct to JSON and returns it as a buffer
+func encodeData(o interface{}) (io.Reader, error) {
+	if o == nil {
+		return nil, nil
+	}
+	buf, err := json.Marshal(&o)
+	if err != nil {
+		return nil, err
+	} else {
+		return bytes.NewReader(buf), nil
+	}
+}
+
 //Parse a CouchDB error response
 func parseError(resp *http.Response) error {
 	var couchReply struct{ Error, Reason string }
 	if resp.Request.Method != "HEAD" {
 		err := parseBody(resp, couchReply)
 		if err != nil {
-			return fmt.Errorf("unknown error accessing CouchDB: %v", err)
+			return fmt.Errorf("Unknown error accessing CouchDB: %v", err)
 		}
 	}
 	return &Error{

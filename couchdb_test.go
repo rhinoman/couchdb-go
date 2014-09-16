@@ -7,9 +7,16 @@ import (
 )
 
 var timeout = time.Duration(500 * time.Millisecond)
+var unittestdb = "unittestdb"
+var server = "maui-test"
+
+type TestDocument struct {
+	Title	string
+	Note	string
+}
 
 func getConnection(t *testing.T) *Connection {
-	conn, err := NewConnection("maui-test", 5984, Auth{}, timeout)
+	conn, err := NewConnection(server, 5984, Auth{}, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -19,12 +26,25 @@ func getConnection(t *testing.T) *Connection {
 
 func getAuthConnection(t *testing.T) *Connection {
 	auth := Auth{Username: "adminuser", Password: "password"}
-	conn, err := NewConnection("maui-test", 5984, auth, timeout)
+	conn, err := NewConnection(server, 5984, auth, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
 	}
 	return conn
+}
+
+func createTestDb(t *testing.T) string {
+	conn := getAuthConnection(t)
+	err := conn.CreateDB(unittestdb)
+	errorify(t, err)
+	return unittestdb
+}
+
+func deleteTestDb(t *testing.T) {
+	conn := getAuthConnection(t)
+	err := conn.DeleteDB(unittestdb)
+	errorify(t, err)
 }
 
 func errorify(t *testing.T, err error){
@@ -49,9 +69,9 @@ func TestBadPing(t *testing.T) {
 	}
 }
 
-func TestAllDBs(t *testing.T) {
+func TestGetDBList(t *testing.T) {
 	conn := getConnection(t)
-	dbList, err := conn.AllDBs()
+	dbList, err := conn.GetDBList()
 	errorify(t, err)
 	if len(dbList) <= 0 {
 		t.Logf("No results!")
@@ -75,4 +95,18 @@ func TestCreateDB(t *testing.T){
 	//now delete it
 	err = conn.DeleteDB("unittestdb")
 	errorify(t,err)
+}
+
+func TestCreateDoc(t *testing.T){
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note: "This is my note",
+	}
+	id, rev, err := conn.CreateDoc(dbName, theDoc)
+	errorify(t, err)
+	t.Logf("New Document ID: %s\n", id)
+	t.Logf("New Document Rev: %s\n", rev)
+	deleteTestDb(t)
 }

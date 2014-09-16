@@ -4,10 +4,12 @@ package couchdb
 //Description: CouchDB driver
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+	"github.com/twinj/uuid"
 )
 
 type Auth struct{ Username, Password string }
@@ -60,8 +62,9 @@ func (conn *Connection) Ping() error {
 	return err
 }
 
+//DATABASES
 //Return a list of all databases on the server
-func (conn *Connection) AllDBs() (dbList []string, err error) {
+func (conn *Connection) GetDBList() (dbList []string, err error) {
 	resp, err := conn.request("GET", "/_all_dbs", nil)
 	if err != nil {
 		return dbList, err
@@ -86,5 +89,29 @@ func (conn *Connection) DeleteDB (name string) error {
 		resp.Body.Close()
 	}
 	return err
+}
+
+//DOCUMENTS
+
+//Create a new document. 
+//'doc' is expected to have an _id field and a _rev field 
+//These fields should be empty, and will be updated after the document is saved
+func (conn *Connection) CreateDoc (dbName string,
+	doc interface{})(id string, rev string, err error) {
+	id = uuid.Formatter(uuid.NewV4(),uuid.Clean)
+	data, err := encodeData(doc)
+	if err != nil {
+		return "","", err
+	}
+	resp, err := conn.request("PUT", cleanPath(dbName, id), data)
+	if err != nil {
+		return "","",err
+	} else if rev = resp.Header.Get("ETag"); rev == ""{
+			return "","",fmt.Errorf("Bad response from CouchDB")
+	} else {
+		parseBody(resp, &doc)
+		return id, rev, nil
+	}
+
 }
 
