@@ -23,8 +23,8 @@ type Database struct {
 }
 
 type Document struct {
-	Id  string `structs:",omitempty"`
-	Rev string `structs:",omitempty"`
+	Id  string
+	Rev string
 }
 
 //creates a regular http connection
