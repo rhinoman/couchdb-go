@@ -66,6 +66,15 @@ func (err *Error) Error() string {
 		err.Method, err.URL, err.StatusCode, err.ErrorCode, err.Reason)
 }
 
+//extracts rev code from header
+func getRevInfo(resp *http.Response) (string, error) {
+	if rev := resp.Header.Get("ETag"); rev == "" {
+		return "", fmt.Errorf("CouchDB did not return rev info")
+	} else {
+		return rev[1 : len(rev)-1], nil
+	}
+}
+
 //unmarshalls a JSON Response Body 
 func parseBody(resp *http.Response, o interface{}) error {
 	err := json.NewDecoder(resp.Body).Decode(&o)

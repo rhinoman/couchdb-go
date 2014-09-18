@@ -13,18 +13,11 @@ import (
 
 type Auth struct{ Username, Password string }
 
-type Connection struct {
-	*connection
-}
+type Connection struct{ *connection }
 
 type Database struct {
 	dbName     string
 	connection *Connection
-}
-
-type Document struct {
-	Id  string
-	Rev string
 }
 
 //creates a regular http connection
@@ -116,6 +109,7 @@ func (conn *Connection) SelectDB(dbName string) *Database {
 //Save a document to the database
 //If you're creating a new document, pass an empty string for rev
 //If updating, you must specify the current rev
+//returns the revision number assigned to the doc by CouchDB
 func (db *Database) Save(doc interface{}, id string, rev string) (string, error) {
 	var headers = make(map[string]string)
 	headers["Content-Type"] = "application/json"
@@ -133,19 +127,15 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 	resp, err := db.connection.request("PUT", cleanPath(db.dbName, id), data, headers)
 	if err != nil {
 		return "", err
-	} else if rev := resp.Header.Get("ETag"); rev == "" {
-		resp.Body.Close()
-		return "", fmt.Errorf("Bad response from CouchDB")
-	} else {
-		resp.Body.Close()
-		rev = rev[1 : len(rev)-1] //remove the "" from the ETag
-		return rev, nil
 	}
+	resp.Body.Close()
+	return getRevInfo(resp)
 }
 
 //Fetches a document from the database
 //pass it a &struct to hold the contents of the fetched document (doc)
 //returns the current revision and/or error
+//TODO: Add ability to pass query args to Couch
 func (db *Database) Read(id string, doc interface{}) (string, error) {
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
@@ -157,15 +147,9 @@ func (db *Database) Read(id string, doc interface{}) (string, error) {
 	if err != nil {
 		resp.Body.Close()
 		return "", err
-	} else if rev := resp.Header.Get("ETag"); rev == "" {
-		resp.Body.Close()
-		return "", fmt.Errorf("Bad response from CouchDB")
-	} else {
-		resp.Body.Close()
-		rev = rev[1 : len(rev)-1]
-		return rev, nil
 	}
-
+	resp.Body.Close()
+	return getRevInfo(resp)
 }
 
 //Deletes a document 
@@ -178,12 +162,7 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 	resp, err := db.connection.request("DELETE", cleanPath(db.dbName, id), nil, headers)
 	if err != nil {
 		return "", err
-	} else if newRev := resp.Header.Get("Etag"); newRev == "" {
-		resp.Body.Close()
-		return "", fmt.Errorf("Bad response from CouchDB")
-	} else {
-		resp.Body.Close()
-		newRev = newRev[1 : len(rev)-1]
-		return newRev, nil
 	}
+	resp.Body.Close()
+	return getRevInfo(resp)
 }
