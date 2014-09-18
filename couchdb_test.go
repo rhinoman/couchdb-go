@@ -2,6 +2,7 @@ package couchdb_test
 
 import (
 	. "github.com/rhinoman/couchdb-go"
+	"github.com/twinj/uuid"
 	"strconv"
 	"testing"
 	"time"
@@ -15,6 +16,11 @@ var numDbs = 1
 type TestDocument struct {
 	Title string
 	Note  string
+}
+
+func getUuid() string {
+	theUuid := uuid.NewV4()
+	return uuid.Formatter(theUuid, uuid.Clean)
 }
 
 func getConnection(t *testing.T) *Connection {
@@ -101,16 +107,87 @@ func TestCreateDB(t *testing.T) {
 	errorify(t, err)
 }
 
-func TestCreateDoc(t *testing.T) {
+func TestSave(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
+	//Create a new document
 	theDoc := TestDocument{
 		Title: "My Document",
 		Note:  "This is my note",
 	}
-	id, rev, err := conn.CreateDoc(dbName, theDoc)
+	db := conn.SelectDB(dbName)
+	theId := getUuid()
+	//Save it
+	t.Logf("Saving first\n")
+	rev, err := db.Save(theDoc, theId, "")
 	errorify(t, err)
-	t.Logf("New Document ID: %s\n", id)
+	t.Logf("New Document ID: %s\n", theId)
 	t.Logf("New Document Rev: %s\n", rev)
+	t.Logf("New Document Title: %v\n", theDoc.Title)
+	t.Logf("New Document Note: %v\n", theDoc.Note)
+	if theDoc.Title != "My Document" ||
+		theDoc.Note != "This is my note" || rev == "" {
+		t.Fail()
+	}
+	//Now, let's try updating it
+	theDoc.Note = "A new note"
+	t.Logf("Saving again\n")
+	rev, err = db.Save(theDoc, theId, rev)
+	errorify(t, err)
+	t.Logf("Updated Document Id: %s\n", theId)
+	t.Logf("Updated Document Rev: %s\n", rev)
+	t.Logf("Updated Document Title: %v\n", theDoc.Title)
+	t.Logf("Updated Document Note: %v\n", theDoc.Note)
+	if theDoc.Note != "A new note" {
+		t.Fail()
+	}
+	deleteTestDb(t, dbName)
+}
+
+func TestRead(t *testing.T) {
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	db := conn.SelectDB(dbName)
+	//Create a test doc
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note:  "Time to read",
+	}
+	emptyDoc := TestDocument{}
+	//Save it
+	theId := getUuid()
+	_, err := db.Save(theDoc, theId, "")
+	errorify(t, err)
+	//Now try to read it
+	rev, err := db.Read(theId, &emptyDoc)
+	errorify(t, err)
+	t.Logf("Document Id: %v\n", theId)
+	t.Logf("Document Rev: %v\n", rev)
+	t.Logf("Document Title: %v\n", emptyDoc.Title)
+	t.Logf("Document Note: %v\n", emptyDoc.Note)
+	deleteTestDb(t, dbName)
+}
+
+func TestDelete(t *testing.T) {
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	db := conn.SelectDB(dbName)
+	//Create a test doc
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note:  "Time to read",
+	}
+	theId := getUuid()
+	rev, err := db.Save(theDoc, theId, "")
+	errorify(t, err)
+	//Now delete it
+	newRev, err := db.Delete(theId, rev)
+	errorify(t, err)
+	t.Logf("Document Id: %v\n", theId)
+	t.Logf("Document Rev: %v\n", rev)
+	t.Logf("Deleted Rev: %v\n", newRev)
+	if newRev == "" || newRev == rev {
+		t.Fail()
+	}
 	deleteTestDb(t, dbName)
 }

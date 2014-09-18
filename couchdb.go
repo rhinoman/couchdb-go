@@ -5,7 +5,6 @@ package couchdb
 
 import (
 	"fmt"
-	"github.com/twinj/uuid"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,6 +15,16 @@ type Auth struct{ Username, Password string }
 
 type Connection struct {
 	*connection
+}
+
+type Database struct {
+	dbName     string
+	connection *Connection
+}
+
+type Document struct {
+	Id  string `structs:",omitempty"`
+	Rev string `structs:",omitempty"`
 }
 
 //creates a regular http connection
@@ -55,7 +64,7 @@ func createConnection(rawUrl string, auth Auth, timeout time.Duration) (*Connect
 
 //Use to check if database server is alive
 func (conn *Connection) Ping() error {
-	resp, err := conn.request("HEAD", "/", nil)
+	resp, err := conn.request("HEAD", "/", nil, nil)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -65,7 +74,7 @@ func (conn *Connection) Ping() error {
 //DATABASES
 //Return a list of all databases on the server
 func (conn *Connection) GetDBList() (dbList []string, err error) {
-	resp, err := conn.request("GET", "/_all_dbs", nil)
+	resp, err := conn.request("GET", "/_all_dbs", nil, nil)
 	if err != nil {
 		return dbList, err
 	}
@@ -75,7 +84,7 @@ func (conn *Connection) GetDBList() (dbList []string, err error) {
 
 //Create a new Database
 func (conn *Connection) CreateDB(name string) error {
-	resp, err := conn.request("PUT", cleanPath(name), nil)
+	resp, err := conn.request("PUT", cleanPath(name), nil, nil)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -84,34 +93,97 @@ func (conn *Connection) CreateDB(name string) error {
 
 //Delete a Database
 func (conn *Connection) DeleteDB(name string) error {
-	resp, err := conn.request("DELETE", cleanPath(name), nil)
+	resp, err := conn.request("DELETE", cleanPath(name), nil, nil)
 	if err == nil {
 		resp.Body.Close()
 	}
 	return err
 }
 
+//Select a Database
+//TODO: Perhaps verify dbName exists in couchdb?
+//Or just do the fast thing here and let subsequent queries fail
+//if the user supplies an incorrect dbname
+func (conn *Connection) SelectDB(dbName string) *Database {
+	return &Database{
+		dbName:     dbName,
+		connection: conn,
+	}
+}
+
 //DOCUMENTS
 
-//Create a new document. 
-//returns the id and rev of the newly created document
-func (conn *Connection) CreateDoc(dbName string,
-	doc interface{}) (id string, rev string, err error) {
-	id = uuid.Formatter(uuid.NewV4(), uuid.Clean)
+//Save a document to the database
+//If you're creating a new document, pass an empty string for rev
+//If updating, you must specify the current rev
+func (db *Database) Save(doc interface{}, id string, rev string) (string, error) {
+	var headers = make(map[string]string)
+	headers["Content-Type"] = "application/json"
+	headers["Accept"] = "application/json"
+	if id == "" {
+		return "", fmt.Errorf("No ID specified")
+	}
+	if rev != "" {
+		headers["If-Match"] = rev
+	}
 	data, err := encodeData(doc)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	resp, err := conn.request("PUT", cleanPath(dbName, id), data)
+	resp, err := db.connection.request("PUT", cleanPath(db.dbName, id), data, headers)
 	if err != nil {
-		return "", "", err
-	} else if rev = resp.Header.Get("ETag"); rev == "" {
+		return "", err
+	} else if rev := resp.Header.Get("ETag"); rev == "" {
 		resp.Body.Close()
-		return "", "", fmt.Errorf("Bad response from CouchDB")
+		return "", fmt.Errorf("Bad response from CouchDB")
 	} else {
 		resp.Body.Close()
 		rev = rev[1 : len(rev)-1] //remove the "" from the ETag
-		return id, rev, nil
+		return rev, nil
+	}
+}
+
+//Fetches a document from the database
+//pass it a &struct to hold the contents of the fetched document (doc)
+//returns the current revision and/or error
+func (db *Database) Read(id string, doc interface{}) (string, error) {
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	resp, err := db.connection.request("GET", cleanPath(db.dbName, id), nil, headers)
+	if err != nil {
+		return "", err
+	}
+	err = parseBody(resp, &doc)
+	if err != nil {
+		resp.Body.Close()
+		return "", err
+	} else if rev := resp.Header.Get("ETag"); rev == "" {
+		resp.Body.Close()
+		return "", fmt.Errorf("Bad response from CouchDB")
+	} else {
+		resp.Body.Close()
+		rev = rev[1 : len(rev)-1]
+		return rev, nil
 	}
 
+}
+
+//Deletes a document 
+//Or rather, tells CouchDB to mark the document as deleted
+//Yes, CouchDB will return a new revision, so this function returns it
+func (db *Database) Delete(id string, rev string) (string, error) {
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["If-Match"] = rev
+	resp, err := db.connection.request("DELETE", cleanPath(db.dbName, id), nil, headers)
+	if err != nil {
+		return "", err
+	} else if newRev := resp.Header.Get("Etag"); newRev == "" {
+		resp.Body.Close()
+		return "", fmt.Errorf("Bad response from CouchDB")
+	} else {
+		resp.Body.Close()
+		newRev = newRev[1 : len(rev)-1]
+		return newRev, nil
+	}
 }

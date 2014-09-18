@@ -29,11 +29,12 @@ func addBasicAuthHeaders(username string, password string, req *http.Request) {
 }
 
 //processes a request
-func (conn *connection) request(method, path string, body io.Reader) (*http.Response, error) {
+func (conn *connection) request(method, path string,
+	body io.Reader, headers map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, conn.url+path, body)
 	//set headers
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	if err != nil {
 		return nil, err
