@@ -10,7 +10,7 @@ import (
 
 var timeout = time.Duration(500 * time.Millisecond)
 var unittestdb = "unittestdb"
-var server = "maui-test"
+var server = "127.0.0.1"
 var numDbs = 1
 
 type TestDocument struct {

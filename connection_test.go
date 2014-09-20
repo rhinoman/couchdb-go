@@ -12,7 +12,7 @@ type couchWelcome struct {
 	Vendor  interface{} `json:"vendor"`
 }
 
-var serverUrl = "http://maui-test:5984"
+var serverUrl = "http://127.0.0.1:5984"
 var couchReply couchWelcome
 
 func TestConnection(t *testing.T) {
