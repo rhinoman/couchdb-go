@@ -3,7 +3,8 @@ go:
  - 1.3
 services:
  - couchdb
-script:
+before_script:
  - curl -X PUT http://127.0.0.1:5984/_config/admins/adminuser -d '"password"' 
+script:
  - go get github.com/twinj/uuid
  - go test -v ./...
