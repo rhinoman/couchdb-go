@@ -162,7 +162,7 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 //Fetches a document from the database
 //pass it a &struct to hold the contents of the fetched document (doc)
 //returns the current revision and/or error
-//TODO: Add ability to pass query args to Couch
+//TODO: Add ability to pass query args to CouchDB
 func (db *Database) Read(id string, doc interface{}) (string, error) {
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
