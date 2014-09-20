@@ -191,3 +191,21 @@ func TestDelete(t *testing.T) {
 	}
 	deleteTestDb(t, dbName)
 }
+
+func TestAddUser(t *testing.T) {
+	conn := getAuthConnection(t)
+	//Save a User
+	rev, err := conn.AddUser("turd.ferguson",
+		"passw0rd", []string{"loser"})
+	errorify(t, err)
+	t.Logf("User Rev: %v\n", rev)
+	if rev == "" {
+		t.Fail()
+	}
+	dRev, err := conn.DeleteUser("turd.ferguson", rev)
+	errorify(t, err)
+	t.Logf("Del User Rev: %v\n", dRev)
+	if rev == dRev || dRev == "" {
+		t.Fail()
+	}
+}

@@ -93,6 +93,30 @@ func (conn *Connection) DeleteDB(name string) error {
 	return err
 }
 
+//Add a User
+func (conn *Connection) AddUser(username string, password string,
+	roles []string) (string, error) {
+
+	userData := struct {
+		Name     string   `json:"name"`
+		Password string   `json:"password"`
+		Roles    []string `json:"roles"`
+		TheType  string   `json:"type"` //apparently type is a keyword in Go :)
+	}{username, password, roles, "user"}
+
+	userDb := conn.SelectDB("_users")
+	namestring := "org.couchdb.user:" + userData.Name
+	return userDb.Save(userData, namestring, "")
+
+}
+
+//Delete a user
+func (conn *Connection) DeleteUser(username string, rev string) (string, error) {
+	userDb := conn.SelectDB("_users")
+	namestring := "org.couchdb.user:" + username
+	return userDb.Delete(namestring, rev)
+}
+
 //Select a Database
 //TODO: Perhaps verify dbName exists in couchdb?
 //Or just do the fast thing here and let subsequent queries fail
