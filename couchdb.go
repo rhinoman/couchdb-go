@@ -94,6 +94,9 @@ func (conn *Connection) DeleteDB(name string) error {
 }
 
 //Add a User
+//This is a convenience method for adding a simple user to CouchDB.
+//If you need a User with custom fields, etc., you'll just have to use the
+//ordinary document methods on the "_users" database
 func (conn *Connection) AddUser(username string, password string,
 	roles []string) (string, error) {
 
@@ -189,4 +192,50 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 	}
 	resp.Body.Close()
 	return getRevInfo(resp)
+}
+
+//Database security
+type Members struct {
+	Users []string `json:"users"`
+	Roles []string `json:"roles"`
+}
+
+type Security struct {
+	Members Members `json:"members"`
+	Admins  Members `json:"admins"`
+}
+
+//Returns the Security document from the database
+func (db *Database) GetSecurity() (*Security, error) {
+	var headers = make(map[string]string)
+	sec := Security{}
+	headers["Accept"] = "application/json"
+	resp, err := db.connection.request("GET",
+		cleanPath(db.dbName, "_security"), nil, headers)
+	if err != nil {
+		return nil, err
+	}
+	err = parseBody(resp, &sec)
+	if err != nil {
+		resp.Body.Close()
+		return nil, err
+	}
+	resp.Body.Close()
+	return &sec, err
+}
+
+//Save a security document to the database
+func (db *Database) SaveSecurity(sec Security) error {
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	data, err := encodeData(sec)
+	if err != nil {
+		return err
+	}
+	resp, err := db.connection.request("PUT",
+		cleanPath(db.dbName, "_security"), data, headers)
+	if err == nil {
+		resp.Body.Close()
+	}
+	return err
 }

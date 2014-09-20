@@ -209,3 +209,34 @@ func TestAddUser(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestSecurity(t *testing.T) {
+	conn := getAuthConnection(t)
+	dbName := createTestDb(t)
+	db := conn.SelectDB(dbName)
+
+	members := Members{
+		Users: []string{"joe, bill"},
+		Roles: []string{"code monkeys"},
+	}
+	admins := Members{
+		Users: []string{"bossman"},
+		Roles: []string{"boss"},
+	}
+	security := Security{
+		Members: members,
+		Admins:  admins,
+	}
+	err := db.SaveSecurity(security)
+	errorify(t, err)
+	sec, err := db.GetSecurity()
+	t.Logf("Security: %v\n", sec)
+	if sec.Admins.Users[0] != "bossman" {
+		t.Fail()
+	}
+	if sec.Admins.Roles[0] != "boss" {
+		t.Fail()
+	}
+	errorify(t, err)
+	deleteTestDb(t, dbName)
+}
