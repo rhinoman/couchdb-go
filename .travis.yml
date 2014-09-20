@@ -5,4 +5,5 @@ go:
  - tip
 
 script:
+ - go get github.com/twinj/uuid
  - go test -v ./... 
