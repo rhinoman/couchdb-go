@@ -1,7 +1,7 @@
 package couchdb_test
 
 import (
-	. "github.com/rhinoman/couchdb-go"
+	"github.com/rhinoman/couchdb-go"
 	"github.com/twinj/uuid"
 	"strconv"
 	"testing"
@@ -23,8 +23,8 @@ func getUuid() string {
 	return uuid.Formatter(theUuid, uuid.Clean)
 }
 
-func getConnection(t *testing.T) *Connection {
-	conn, err := NewConnection(server, 5984, Auth{}, timeout)
+func getConnection(t *testing.T) *couchdb.Connection {
+	conn, err := couchdb.NewConnection(server, 5984, couchdb.Auth{}, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -32,9 +32,9 @@ func getConnection(t *testing.T) *Connection {
 	return conn
 }
 
-func getAuthConnection(t *testing.T) *Connection {
-	auth := Auth{Username: "adminuser", Password: "password"}
-	conn, err := NewConnection(server, 5984, auth, timeout)
+func getAuthConnection(t *testing.T) *couchdb.Connection {
+	auth := couchdb.Auth{Username: "adminuser", Password: "password"}
+	conn, err := couchdb.NewConnection(server, 5984, auth, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -71,7 +71,7 @@ func TestPing(t *testing.T) {
 }
 
 func TestBadPing(t *testing.T) {
-	conn, err := NewConnection("unpingable", 1234, Auth{}, timeout)
+	conn, err := couchdb.NewConnection("unpingable", 1234, couchdb.Auth{}, timeout)
 	errorify(t, err)
 	pingErr := conn.Ping()
 	if pingErr == nil {
@@ -215,15 +215,15 @@ func TestSecurity(t *testing.T) {
 	dbName := createTestDb(t)
 	db := conn.SelectDB(dbName)
 
-	members := Members{
+	members := couchdb.Members{
 		Users: []string{"joe, bill"},
 		Roles: []string{"code monkeys"},
 	}
-	admins := Members{
+	admins := couchdb.Members{
 		Users: []string{"bossman"},
 		Roles: []string{"boss"},
 	}
-	security := Security{
+	security := couchdb.Security{
 		Members: members,
 		Admins:  admins,
 	}
