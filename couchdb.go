@@ -239,3 +239,39 @@ func (db *Database) SaveSecurity(sec Security) error {
 	}
 	return err
 }
+
+//Get the results of a view
+//TODO: Add query arguments / options
+func (db *Database) GetView(designDoc string, view string,
+	results interface{}) error {
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	resp, err := db.connection.request("GET",
+		cleanPath(db.dbName, "_design", designDoc, "_view", view),
+			nil, headers)
+	if err != nil {
+		return err
+	}
+	err = parseBody(resp, &results)
+	if err != nil {
+		resp.Body.Close()
+		return err
+	}
+	resp.Body.Close()
+	return nil
+}
+
+//Save a design document
+//If creating a new design doc, set rev to ""
+func (db *Database) SaveDesignDoc(name string,
+	designDoc interface{}, rev string) (string, error) {
+	path := "_design/" + name
+	newRev, err := db.Save(designDoc, path, rev)
+	if err != nil{
+		return "", err
+	} else if newRev == ""{
+		return "", fmt.Errorf("CouchDB returned an empty revision string.")
+	}
+	return newRev, nil
+
+}

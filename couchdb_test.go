@@ -18,6 +18,28 @@ type TestDocument struct {
 	Note  string
 }
 
+type ViewResult struct {
+	Id string	`json:"id"`
+	Key TestDocument `json:"key"`
+}
+
+type ViewResponse struct {
+	TotalRows int	`json:"total_rows"`
+	Offset    int	`json:"offset"`
+	Rows      []ViewResult `json:"rows,omitempty"`
+}
+
+type View struct {
+	Map string `json:"map"`
+	Reduce string `json:"reduce,omitempty"`
+}
+
+type DesignDocument struct {
+	Language string `json:"language"`
+	Views	 map[string]View `json:"views"`
+
+}
+
 func getUuid() string {
 	theUuid := uuid.NewV4()
 	return uuid.Formatter(theUuid, uuid.Clean)
@@ -55,6 +77,22 @@ func deleteTestDb(t *testing.T, dbName string) {
 	conn := getAuthConnection(t)
 	err := conn.DeleteDB(dbName)
 	errorify(t, err)
+}
+
+func createLotsDocs(t *testing.T, db *couchdb.Database){
+	for i:=0; i<10; i++ {
+		id := getUuid()
+		note := "purple"
+		if i % 2 == 0{
+			note = "magenta"
+		}
+		testDoc := TestDocument{
+			Title: "TheDoc -- " + strconv.Itoa(i),
+			Note: note,
+		}
+		_, err := db.Save(testDoc, id, "")
+		errorify(t, err)
+	}
 }
 
 func errorify(t *testing.T, err error) {
@@ -239,4 +277,41 @@ func TestSecurity(t *testing.T) {
 	}
 	errorify(t, err)
 	deleteTestDb(t, dbName)
+}
+
+func TestDesignDocs(t *testing.T) {
+	conn := getAuthConnection(t)
+	dbName := createTestDb(t)
+	db := conn.SelectDB(dbName)
+	createLotsDocs(t, db)
+
+	view := View{
+		Map: "function(doc) {\n  if (doc.Note === \"magenta\"){\n    emit(doc)\n  }\n}",
+	}
+	views := make(map[string]View)
+	views["find_all_magenta"] = view
+	ddoc := DesignDocument{
+		Language: "javascript",
+		Views: views,
+	}
+	rev, err := db.SaveDesignDoc("colors", ddoc, "")
+	errorify(t, err)
+	if rev == ""{
+		t.Fail()
+	} else {
+		t.Logf("Rev of design doc: %v\n", rev)
+	}
+	result := ViewResponse{}
+	//now try to query the view
+	err = db.GetView("colors","find_all_magenta", &result)
+	errorify(t, err)
+	if len(result.Rows) != 5{
+		t.Logf("docList length: %v\n", len(result.Rows))
+		t.Fail()
+	} else {
+		t.Logf("Results: %v\n", result.Rows)
+	}
+
+	deleteTestDb(t, dbName)
+
 }
