@@ -2,6 +2,7 @@ package couchdb
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -15,11 +16,27 @@ type couchWelcome struct {
 var serverUrl = "http://127.0.0.1:5984"
 var couchReply couchWelcome
 
+func TestUrlBuilding(t *testing.T) {
+	params := url.Values{}
+	params.Add("Hello", "42")
+	params.Add("crazy", "me&joe")
+	stringified, err := buildParamUrl(params, "theDb", "funny?chars")
+	if err != nil {
+		t.Fail()
+	}
+	t.Logf("The URL: %s\n", stringified)
+	//make sure everything is escaped
+	if stringified != "/theDb/funny%3Fchars?Hello=42&crazy=me%26joe" {
+		t.Fail()
+	}
+}
+
 func TestConnection(t *testing.T) {
 	client := &http.Client{}
 	c := connection{serverUrl, client, "", ""}
 	resp, err := c.request("GET", "/", nil, nil)
 	if err != nil {
+		t.Logf("Error: %v\n", err)
 		t.Fail()
 	} else if resp == nil {
 		t.Fail()

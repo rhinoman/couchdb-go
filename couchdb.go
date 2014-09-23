@@ -77,7 +77,11 @@ func (conn *Connection) GetDBList() (dbList []string, err error) {
 
 //Create a new Database
 func (conn *Connection) CreateDB(name string) error {
-	resp, err := conn.request("PUT", cleanPath(name), nil, nil)
+	url, err := buildUrl(name)
+	if err != nil {
+		return err
+	}
+	resp, err := conn.request("PUT", url, nil, nil)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -86,7 +90,11 @@ func (conn *Connection) CreateDB(name string) error {
 
 //Delete a Database
 func (conn *Connection) DeleteDB(name string) error {
-	resp, err := conn.request("DELETE", cleanPath(name), nil, nil)
+	url, err := buildUrl(name)
+	if err != nil {
+		return err
+	}
+	resp, err := conn.request("DELETE", url, nil, nil)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -138,6 +146,10 @@ func (conn *Connection) SelectDB(dbName string) *Database {
 //If updating, you must specify the current rev
 //returns the revision number assigned to the doc by CouchDB
 func (db *Database) Save(doc interface{}, id string, rev string) (string, error) {
+	url, err := buildUrl(db.dbName, id)
+	if err != nil {
+		return "", err
+	}
 	var headers = make(map[string]string)
 	headers["Content-Type"] = "application/json"
 	headers["Accept"] = "application/json"
@@ -151,7 +163,7 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	resp, err := db.connection.request("PUT", cleanPath(db.dbName, id), data, headers)
+	resp, err := db.connection.request("PUT", url, data, headers)
 	if err != nil {
 		return "", err
 	}
@@ -162,11 +174,20 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 //Fetches a document from the database
 //pass it a &struct to hold the contents of the fetched document (doc)
 //returns the current revision and/or error
-//TODO: Add ability to pass query args to CouchDB
-func (db *Database) Read(id string, doc interface{}) (string, error) {
+func (db *Database) Read(id string, doc interface{}, params *url.Values) (string, error) {
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
-	resp, err := db.connection.request("GET", cleanPath(db.dbName, id), nil, headers)
+	var url string
+	var err error
+	if params == nil {
+		url, err = buildUrl(db.dbName, id)
+	} else {
+		url, err = buildParamUrl(*params, db.dbName, id)
+	}
+	if err != nil {
+		return "", err
+	}
+	resp, err := db.connection.request("GET", url, nil, headers)
 	if err != nil {
 		return "", err
 	}
@@ -183,10 +204,14 @@ func (db *Database) Read(id string, doc interface{}) (string, error) {
 //Or rather, tells CouchDB to mark the document as deleted
 //Yes, CouchDB will return a new revision, so this function returns it
 func (db *Database) Delete(id string, rev string) (string, error) {
+	url, err := buildUrl(db.dbName, id)
+	if err != nil {
+		return "", err
+	}
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
 	headers["If-Match"] = rev
-	resp, err := db.connection.request("DELETE", cleanPath(db.dbName, id), nil, headers)
+	resp, err := db.connection.request("DELETE", url, nil, headers)
 	if err != nil {
 		return "", err
 	}
@@ -207,11 +232,14 @@ type Security struct {
 
 //Returns the Security document from the database
 func (db *Database) GetSecurity() (*Security, error) {
+	url, err := buildUrl(db.dbName, "_security")
+	if err != nil {
+		return nil, err
+	}
 	var headers = make(map[string]string)
 	sec := Security{}
 	headers["Accept"] = "application/json"
-	resp, err := db.connection.request("GET",
-		cleanPath(db.dbName, "_security"), nil, headers)
+	resp, err := db.connection.request("GET", url, nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -226,14 +254,17 @@ func (db *Database) GetSecurity() (*Security, error) {
 
 //Save a security document to the database
 func (db *Database) SaveSecurity(sec Security) error {
+	url, err := buildUrl(db.dbName, "_security")
+	if err != nil {
+		return err
+	}
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
 	data, err := encodeData(sec)
 	if err != nil {
 		return err
 	}
-	resp, err := db.connection.request("PUT",
-		cleanPath(db.dbName, "_security"), data, headers)
+	resp, err := db.connection.request("PUT", url, data, headers)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -241,14 +272,22 @@ func (db *Database) SaveSecurity(sec Security) error {
 }
 
 //Get the results of a view
-//TODO: Add query arguments / options
 func (db *Database) GetView(designDoc string, view string,
-	results interface{}) error {
+	results interface{}, params *url.Values) error {
+	var err error
+	var url string
+	if params == nil {
+		url, err = buildUrl(db.dbName, "_design", designDoc, "_view", view)
+	} else {
+		url, err = buildParamUrl(*params, db.dbName, "_design",
+			designDoc, "_view", view)
+	}
+	if err != nil {
+		return err
+	}
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
-	resp, err := db.connection.request("GET",
-		cleanPath(db.dbName, "_design", designDoc, "_view", view),
-			nil, headers)
+	resp, err := db.connection.request("GET", url, nil, headers)
 	if err != nil {
 		return err
 	}
@@ -267,9 +306,9 @@ func (db *Database) SaveDesignDoc(name string,
 	designDoc interface{}, rev string) (string, error) {
 	path := "_design/" + name
 	newRev, err := db.Save(designDoc, path, rev)
-	if err != nil{
+	if err != nil {
 		return "", err
-	} else if newRev == ""{
+	} else if newRev == "" {
 		return "", fmt.Errorf("CouchDB returned an empty revision string.")
 	}
 	return newRev, nil

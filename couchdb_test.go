@@ -19,25 +19,24 @@ type TestDocument struct {
 }
 
 type ViewResult struct {
-	Id string	`json:"id"`
+	Id  string       `json:"id"`
 	Key TestDocument `json:"key"`
 }
 
 type ViewResponse struct {
-	TotalRows int	`json:"total_rows"`
-	Offset    int	`json:"offset"`
+	TotalRows int          `json:"total_rows"`
+	Offset    int          `json:"offset"`
 	Rows      []ViewResult `json:"rows,omitempty"`
 }
 
 type View struct {
-	Map string `json:"map"`
+	Map    string `json:"map"`
 	Reduce string `json:"reduce,omitempty"`
 }
 
 type DesignDocument struct {
-	Language string `json:"language"`
-	Views	 map[string]View `json:"views"`
-
+	Language string          `json:"language"`
+	Views    map[string]View `json:"views"`
 }
 
 func getUuid() string {
@@ -79,16 +78,16 @@ func deleteTestDb(t *testing.T, dbName string) {
 	errorify(t, err)
 }
 
-func createLotsDocs(t *testing.T, db *couchdb.Database){
-	for i:=0; i<10; i++ {
+func createLotsDocs(t *testing.T, db *couchdb.Database) {
+	for i := 0; i < 10; i++ {
 		id := getUuid()
 		note := "purple"
-		if i % 2 == 0{
+		if i%2 == 0 {
 			note = "magenta"
 		}
 		testDoc := TestDocument{
 			Title: "TheDoc -- " + strconv.Itoa(i),
-			Note: note,
+			Note:  note,
 		}
 		_, err := db.Save(testDoc, id, "")
 		errorify(t, err)
@@ -197,7 +196,7 @@ func TestRead(t *testing.T) {
 	_, err := db.Save(theDoc, theId, "")
 	errorify(t, err)
 	//Now try to read it
-	rev, err := db.Read(theId, &emptyDoc)
+	rev, err := db.Read(theId, &emptyDoc, nil)
 	errorify(t, err)
 	t.Logf("Document Id: %v\n", theId)
 	t.Logf("Document Rev: %v\n", rev)
@@ -292,20 +291,20 @@ func TestDesignDocs(t *testing.T) {
 	views["find_all_magenta"] = view
 	ddoc := DesignDocument{
 		Language: "javascript",
-		Views: views,
+		Views:    views,
 	}
 	rev, err := db.SaveDesignDoc("colors", ddoc, "")
 	errorify(t, err)
-	if rev == ""{
+	if rev == "" {
 		t.Fail()
 	} else {
 		t.Logf("Rev of design doc: %v\n", rev)
 	}
 	result := ViewResponse{}
 	//now try to query the view
-	err = db.GetView("colors","find_all_magenta", &result)
+	err = db.GetView("colors", "find_all_magenta", &result, nil)
 	errorify(t, err)
-	if len(result.Rows) != 5{
+	if len(result.Rows) != 5 {
 		t.Logf("docList length: %v\n", len(result.Rows))
 		t.Fail()
 	} else {

@@ -117,12 +117,36 @@ func parseError(resp *http.Response) error {
 	}
 }
 
-//Sanitize path args
-func cleanPath(pathSegments ...string) string {
-	cleaned := ""
+//smooshes url segments together
+func buildString(pathSegments []string) string {
+	urlString := ""
 	for _, pathSegment := range pathSegments {
-		cleaned += "/"
-		cleaned += url.QueryEscape(pathSegment)
+		urlString += "/"
+		urlString += url.QueryEscape(pathSegment)
 	}
-	return cleaned
+	return urlString
+}
+
+//Build Url
+func buildUrl(pathSegments ...string) (string, error) {
+	var Url *url.URL
+	urlString := buildString(pathSegments)
+	Url, err := url.Parse(urlString)
+	if err != nil {
+		return "", err
+	}
+	return Url.String(), nil
+}
+
+//Build Url with query arguments
+func buildParamUrl(params url.Values, pathSegments ...string) (string, error) {
+	var Url *url.URL
+	urlString := buildString(pathSegments)
+	Url, err := url.Parse(urlString)
+	if err != nil {
+		return "", err
+	}
+	Url.RawQuery = params.Encode()
+
+	return Url.String(), nil
 }
