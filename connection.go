@@ -1,4 +1,3 @@
-//Lower level stuff happens here, should not be used directly
 package couchdb
 
 import (
