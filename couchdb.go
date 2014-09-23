@@ -1,7 +1,6 @@
 package couchdb
 
-//File: couchdb.go
-//Description: CouchDB driver
+//package couchdb provides a simple REST client for CouchDB
 
 import (
 	"fmt"
