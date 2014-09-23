@@ -1,6 +1,5 @@
-package couchdb
-
 //package couchdb provides a simple REST client for CouchDB
+package couchdb
 
 import (
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"time"
 )
 
+//Contains Authentication info: Username and password
 type Auth struct{ Username, Password string }
 
 type Connection struct{ *connection }
@@ -19,8 +19,8 @@ type Database struct {
 	connection *Connection
 }
 
-//creates a regular http connection
-//timeout sets the timeout for the http Client
+//Creates a regular http connection.
+//Timeout sets the timeout for the http Client
 func NewConnection(address string, port int,
 	auth Auth, timeout time.Duration) (*Connection, error) {
 
@@ -28,8 +28,8 @@ func NewConnection(address string, port int,
 	return createConnection(url, auth, timeout)
 }
 
-//creates an https connection
-//timeout sets the timeout for the http Client
+//Creates an https connection.
+//Timeout sets the timeout for the http Client
 func NewSSLConnection(address string, port int,
 	auth Auth, timeout time.Duration) (*Connection, error) {
 
@@ -54,7 +54,7 @@ func createConnection(rawUrl string, auth Auth, timeout time.Duration) (*Connect
 
 }
 
-//Use to check if database server is alive
+//Use to check if database server is alive.
 func (conn *Connection) Ping() error {
 	resp, err := conn.request("HEAD", "/", nil, nil)
 	if err == nil {
@@ -63,7 +63,7 @@ func (conn *Connection) Ping() error {
 	return err
 }
 
-//DATABASES
+//DATABASES.
 //Return a list of all databases on the server
 func (conn *Connection) GetDBList() (dbList []string, err error) {
 	resp, err := conn.request("GET", "/_all_dbs", nil, nil)
@@ -74,7 +74,7 @@ func (conn *Connection) GetDBList() (dbList []string, err error) {
 	return dbList, err
 }
 
-//Create a new Database
+//Create a new Database.
 func (conn *Connection) CreateDB(name string) error {
 	url, err := buildUrl(name)
 	if err != nil {
@@ -87,7 +87,7 @@ func (conn *Connection) CreateDB(name string) error {
 	return err
 }
 
-//Delete a Database
+//Delete a Database.
 func (conn *Connection) DeleteDB(name string) error {
 	url, err := buildUrl(name)
 	if err != nil {
@@ -100,10 +100,10 @@ func (conn *Connection) DeleteDB(name string) error {
 	return err
 }
 
-//Add a User
+//Add a User.
 //This is a convenience method for adding a simple user to CouchDB.
 //If you need a User with custom fields, etc., you'll just have to use the
-//ordinary document methods on the "_users" database
+//ordinary document methods on the "_users" database.
 func (conn *Connection) AddUser(username string, password string,
 	roles []string) (string, error) {
 
@@ -120,17 +120,17 @@ func (conn *Connection) AddUser(username string, password string,
 
 }
 
-//Delete a user
+//Delete a user.
 func (conn *Connection) DeleteUser(username string, rev string) (string, error) {
 	userDb := conn.SelectDB("_users")
 	namestring := "org.couchdb.user:" + username
 	return userDb.Delete(namestring, rev)
 }
 
-//Select a Database
+//Select a Database.
 //TODO: Perhaps verify dbName exists in couchdb?
 //Or just do the fast thing here and let subsequent queries fail
-//if the user supplies an incorrect dbname
+//if the user supplies an incorrect dbname.
 func (conn *Connection) SelectDB(dbName string) *Database {
 	return &Database{
 		dbName:     dbName,
@@ -138,12 +138,10 @@ func (conn *Connection) SelectDB(dbName string) *Database {
 	}
 }
 
-//DOCUMENTS
-
-//Save a document to the database
-//If you're creating a new document, pass an empty string for rev
-//If updating, you must specify the current rev
-//returns the revision number assigned to the doc by CouchDB
+//Save a document to the database.
+//If you're creating a new document, pass an empty string for rev.
+//If updating, you must specify the current rev.
+//Returns the revision number assigned to the doc by CouchDB.
 func (db *Database) Save(doc interface{}, id string, rev string) (string, error) {
 	url, err := buildUrl(db.dbName, id)
 	if err != nil {
@@ -170,9 +168,9 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 	return getRevInfo(resp)
 }
 
-//Fetches a document from the database
-//pass it a &struct to hold the contents of the fetched document (doc)
-//returns the current revision and/or error
+//Fetches a document from the database.
+//Pass it a &struct to hold the contents of the fetched document (doc).
+//Returns the current revision and/or error
 func (db *Database) Read(id string, doc interface{}, params *url.Values) (string, error) {
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
@@ -199,9 +197,9 @@ func (db *Database) Read(id string, doc interface{}, params *url.Values) (string
 	return getRevInfo(resp)
 }
 
-//Deletes a document 
-//Or rather, tells CouchDB to mark the document as deleted
-//Yes, CouchDB will return a new revision, so this function returns it
+//Deletes a document.
+//Or rather, tells CouchDB to mark the document as deleted.
+//Yes, CouchDB will return a new revision, so this function returns it.
 func (db *Database) Delete(id string, rev string) (string, error) {
 	url, err := buildUrl(db.dbName, id)
 	if err != nil {
@@ -218,7 +216,6 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 	return getRevInfo(resp)
 }
 
-//Database security
 type Members struct {
 	Users []string `json:"users"`
 	Roles []string `json:"roles"`
@@ -229,7 +226,7 @@ type Security struct {
 	Admins  Members `json:"admins"`
 }
 
-//Returns the Security document from the database
+//Returns the Security document from the database.
 func (db *Database) GetSecurity() (*Security, error) {
 	url, err := buildUrl(db.dbName, "_security")
 	if err != nil {
@@ -251,7 +248,7 @@ func (db *Database) GetSecurity() (*Security, error) {
 	return &sec, err
 }
 
-//Save a security document to the database
+//Save a security document to the database.
 func (db *Database) SaveSecurity(sec Security) error {
 	url, err := buildUrl(db.dbName, "_security")
 	if err != nil {
@@ -270,7 +267,7 @@ func (db *Database) SaveSecurity(sec Security) error {
 	return err
 }
 
-//Get the results of a view
+//Get the results of a view.
 func (db *Database) GetView(designDoc string, view string,
 	results interface{}, params *url.Values) error {
 	var err error
@@ -299,8 +296,8 @@ func (db *Database) GetView(designDoc string, view string,
 	return nil
 }
 
-//Save a design document
-//If creating a new design doc, set rev to ""
+//Save a design document.
+//If creating a new design doc, set rev to "".
 func (db *Database) SaveDesignDoc(name string,
 	designDoc interface{}, rev string) (string, error) {
 	path := "_design/" + name

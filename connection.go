@@ -1,7 +1,5 @@
+//Lower level stuff happens here, should not be used directly
 package couchdb
-
-//File: connection.go
-//Description: Lower level stuff happens here, should not be used directly
 
 import (
 	"bytes"
@@ -75,7 +73,7 @@ func getRevInfo(resp *http.Response) (string, error) {
 	}
 }
 
-//unmarshalls a JSON Response Body 
+//unmarshalls a JSON Response Body
 func parseBody(resp *http.Response, o interface{}) error {
 	err := json.NewDecoder(resp.Body).Decode(&o)
 	if err != nil {
