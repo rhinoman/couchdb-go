@@ -12,6 +12,8 @@ var timeout = time.Duration(500 * time.Millisecond)
 var unittestdb = "unittestdb"
 var server = "127.0.0.1"
 var numDbs = 1
+var adminAuth = couchdb.Auth{Username: "adminuser", Password: "password"}
+
 
 type TestDocument struct {
 	Title string
@@ -45,7 +47,7 @@ func getUuid() string {
 }
 
 func getConnection(t *testing.T) *couchdb.Connection {
-	conn, err := couchdb.NewConnection(server, 5984, couchdb.Auth{}, timeout)
+	conn, err := couchdb.NewConnection(server, 5984,timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -53,28 +55,28 @@ func getConnection(t *testing.T) *couchdb.Connection {
 	return conn
 }
 
-func getAuthConnection(t *testing.T) *couchdb.Connection {
+/*func getAuthConnection(t *testing.T) *couchdb.Connection {
 	auth := couchdb.Auth{Username: "adminuser", Password: "password"}
-	conn, err := couchdb.NewConnection(server, 5984, auth, timeout)
+	conn, err := couchdb.NewConnection(server, 5984, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
 	}
 	return conn
-}
+}*/
 
 func createTestDb(t *testing.T) string {
-	conn := getAuthConnection(t)
+	conn := getConnection(t)
 	dbName := unittestdb + strconv.Itoa(numDbs)
-	err := conn.CreateDB(dbName)
+	err := conn.CreateDB(dbName, adminAuth)
 	errorify(t, err)
 	numDbs += 1
 	return dbName
 }
 
 func deleteTestDb(t *testing.T, dbName string) {
-	conn := getAuthConnection(t)
-	err := conn.DeleteDB(dbName)
+	conn := getConnection(t)
+	err := conn.DeleteDB(dbName, adminAuth)
 	errorify(t, err)
 }
 
@@ -108,7 +110,7 @@ func TestPing(t *testing.T) {
 }
 
 func TestBadPing(t *testing.T) {
-	conn, err := couchdb.NewConnection("unpingable", 1234, couchdb.Auth{}, timeout)
+	conn, err := couchdb.NewConnection("unpingable", 1234, timeout)
 	errorify(t, err)
 	pingErr := conn.Ping()
 	if pingErr == nil {
@@ -131,16 +133,16 @@ func TestGetDBList(t *testing.T) {
 }
 
 func TestCreateDB(t *testing.T) {
-	conn := getAuthConnection(t)
-	err := conn.CreateDB("testcreatedb")
+	conn := getConnection(t)
+	err := conn.CreateDB("testcreatedb", adminAuth)
 	errorify(t, err)
 	//try to create it again --- should fail
-	err = conn.CreateDB("testcreatedb")
+	err = conn.CreateDB("testcreatedb", adminAuth)
 	if err == nil {
 		t.Fail()
 	}
 	//now delete it
-	err = conn.DeleteDB("testcreatedb")
+	err = conn.DeleteDB("testcreatedb", adminAuth)
 	errorify(t, err)
 }
 
@@ -152,7 +154,7 @@ func TestSave(t *testing.T) {
 		Title: "My Document",
 		Note:  "This is my note",
 	}
-	db := conn.SelectDB(dbName)
+	db := conn.SelectDB(dbName, couchdb.Auth{})
 	theId := getUuid()
 	//Save it
 	t.Logf("Saving first\n")
@@ -184,7 +186,7 @@ func TestSave(t *testing.T) {
 func TestRead(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
-	db := conn.SelectDB(dbName)
+	db := conn.SelectDB(dbName, couchdb.Auth{})
 	//Create a test doc
 	theDoc := TestDocument{
 		Title: "My Document",
@@ -208,7 +210,7 @@ func TestRead(t *testing.T) {
 func TestDelete(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
-	db := conn.SelectDB(dbName)
+	db := conn.SelectDB(dbName, couchdb.Auth{})
 	//Create a test doc
 	theDoc := TestDocument{
 		Title: "My Document",
@@ -230,16 +232,16 @@ func TestDelete(t *testing.T) {
 }
 
 func TestAddUser(t *testing.T) {
-	conn := getAuthConnection(t)
+	conn := getConnection(t)
 	//Save a User
 	rev, err := conn.AddUser("turd.ferguson",
-		"passw0rd", []string{"loser"})
+		"passw0rd", []string{"loser"}, adminAuth)
 	errorify(t, err)
 	t.Logf("User Rev: %v\n", rev)
 	if rev == "" {
 		t.Fail()
 	}
-	dRev, err := conn.DeleteUser("turd.ferguson", rev)
+	dRev, err := conn.DeleteUser("turd.ferguson", rev, adminAuth)
 	errorify(t, err)
 	t.Logf("Del User Rev: %v\n", dRev)
 	if rev == dRev || dRev == "" {
@@ -248,9 +250,9 @@ func TestAddUser(t *testing.T) {
 }
 
 func TestSecurity(t *testing.T) {
-	conn := getAuthConnection(t)
+	conn := getConnection(t)
 	dbName := createTestDb(t)
-	db := conn.SelectDB(dbName)
+	db := conn.SelectDB(dbName, adminAuth)
 
 	members := couchdb.Members{
 		Users: []string{"joe, bill"},
@@ -279,9 +281,9 @@ func TestSecurity(t *testing.T) {
 }
 
 func TestDesignDocs(t *testing.T) {
-	conn := getAuthConnection(t)
+	conn := getConnection(t)
 	dbName := createTestDb(t)
-	db := conn.SelectDB(dbName)
+	db := conn.SelectDB(dbName, adminAuth)
 	createLotsDocs(t, db)
 
 	view := View{

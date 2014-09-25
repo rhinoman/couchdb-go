@@ -33,8 +33,8 @@ func TestUrlBuilding(t *testing.T) {
 
 func TestConnection(t *testing.T) {
 	client := &http.Client{}
-	c := connection{serverUrl, client, "", ""}
-	resp, err := c.request("GET", "/", nil, nil)
+	c := connection{serverUrl, client}
+	resp, err := c.request("GET", "/", nil, nil, nil)
 	if err != nil {
 		t.Logf("Error: %v\n", err)
 		t.Fail()
@@ -60,8 +60,9 @@ func TestConnection(t *testing.T) {
 
 func TestBasicAuth(t *testing.T) {
 	client := &http.Client{}
-	c := connection{serverUrl, client, "adminuser", "password"}
-	resp, err := c.request("GET", "/", nil, nil)
+	auth := Auth{ Username: "adminuser", Password: "password" }
+	c := connection{serverUrl, client }
+	resp, err := c.request("GET", "/", nil, nil, &auth)
 	if err != nil {
 		t.Logf("Error: %v", err)
 		t.Fail()
@@ -74,8 +75,9 @@ func TestBasicAuth(t *testing.T) {
 
 func TestBadAuth(t *testing.T) {
 	client := &http.Client{}
-	c := connection{serverUrl, client, "notauser", "what?"}
-	resp, err := c.request("GET", "/", nil, nil)
+	auth := Auth{ Username: "notauser", Password: "what?" }
+	c := connection{serverUrl, client }
+	resp, err := c.request("GET", "/", nil, nil, &auth)
 	if err == nil {
 		t.Fail()
 	} else if resp.StatusCode != 401 {

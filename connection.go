@@ -14,8 +14,6 @@ import (
 type connection struct {
 	url      string
 	client   *http.Client
-	username string
-	password string
 }
 
 //Adds HTTP Basic Authentication headers to a request
@@ -27,7 +25,7 @@ func addBasicAuthHeaders(username string, password string, req *http.Request) {
 
 //processes a request
 func (conn *connection) request(method, path string,
-	body io.Reader, headers map[string]string) (*http.Response, error) {
+	body io.Reader, headers map[string]string, auth *Auth) (*http.Response, error) {
 	req, err := http.NewRequest(method, conn.url+path, body)
 	//set headers
 	for k, v := range headers {
@@ -36,8 +34,8 @@ func (conn *connection) request(method, path string,
 	if err != nil {
 		return nil, err
 	}
-	if conn.username != "" && conn.password != "" {
-		addBasicAuthHeaders(conn.username, conn.password, req)
+	if auth != nil && auth.Username != "" && auth.Password != "" {
+		addBasicAuthHeaders(auth.Username, auth.Password, req)
 	}
 	resp, err := conn.client.Do(req)
 	if err != nil {
