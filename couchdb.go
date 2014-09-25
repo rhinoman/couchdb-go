@@ -1,4 +1,4 @@
-//package couchdb provides a simple REST client for CouchDB
+//Package couchdb provides a simple REST client for CouchDB
 package couchdb
 
 import (
