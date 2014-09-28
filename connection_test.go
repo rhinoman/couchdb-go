@@ -60,8 +60,8 @@ func TestConnection(t *testing.T) {
 
 func TestBasicAuth(t *testing.T) {
 	client := &http.Client{}
-	auth := Auth{ Username: "adminuser", Password: "password" }
-	c := connection{serverUrl, client }
+	auth := Auth{Username: "adminuser", Password: "password"}
+	c := connection{serverUrl, client}
 	resp, err := c.request("GET", "/", nil, nil, &auth)
 	if err != nil {
 		t.Logf("Error: %v", err)
@@ -75,8 +75,8 @@ func TestBasicAuth(t *testing.T) {
 
 func TestBadAuth(t *testing.T) {
 	client := &http.Client{}
-	auth := Auth{ Username: "notauser", Password: "what?" }
-	c := connection{serverUrl, client }
+	auth := Auth{Username: "notauser", Password: "what?"}
+	c := connection{serverUrl, client}
 	resp, err := c.request("GET", "/", nil, nil, &auth)
 	if err == nil {
 		t.Fail()

@@ -46,8 +46,8 @@ func createConnection(rawUrl string, timeout time.Duration) (*Connection, error)
 	}
 	return &Connection{
 		&connection{
-			url:      theUrl.String(),
-			client:   &http.Client{Timeout: timeout},
+			url:    theUrl.String(),
+			client: &http.Client{Timeout: timeout},
 		},
 	}, nil
 
@@ -135,6 +135,10 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 		connection: conn,
 		auth:       &Auth{auth.Username, auth.Password},
 	}
+}
+
+func (db *Database) GetUsername() string {
+	return db.auth.Username
 }
 
 //Save a document to the database.

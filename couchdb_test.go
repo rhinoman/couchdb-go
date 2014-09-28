@@ -14,7 +14,6 @@ var server = "127.0.0.1"
 var numDbs = 1
 var adminAuth = couchdb.Auth{Username: "adminuser", Password: "password"}
 
-
 type TestDocument struct {
 	Title string
 	Note  string
@@ -47,7 +46,7 @@ func getUuid() string {
 }
 
 func getConnection(t *testing.T) *couchdb.Connection {
-	conn, err := couchdb.NewConnection(server, 5984,timeout)
+	conn, err := couchdb.NewConnection(server, 5984, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()

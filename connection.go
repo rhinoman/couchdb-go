@@ -12,8 +12,8 @@ import (
 
 //represents a couchdb 'connection'
 type connection struct {
-	url      string
-	client   *http.Client
+	url    string
+	client *http.Client
 }
 
 //Adds HTTP Basic Authentication headers to a request
