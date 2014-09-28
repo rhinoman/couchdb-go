@@ -16,6 +16,11 @@ Installation
 go get github.com/rhinoman/couchdb-go
 ```
 
+Documentation
+-------------
+
+See the Godoc: A http://godoc.org/github.com/rhinoman/couchdb-go
+
 Example Usage
 -------------
 
