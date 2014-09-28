@@ -206,6 +206,35 @@ func TestRead(t *testing.T) {
 	deleteTestDb(t, dbName)
 }
 
+func TestCopy(t *testing.T) {
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	db := conn.SelectDB(dbName, couchdb.Auth{})
+	//Create a test doc
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note:  "Time to read",
+	}
+	emptyDoc := TestDocument{}
+	//Save it
+	theId := getUuid()
+	rev, err := db.Save(theDoc, theId, "")
+	errorify(t, err)
+	//Now copy it
+	copyId := getUuid()
+	copyRev, err := db.Copy(theId, rev, copyId)
+	errorify(t, err)
+	t.Logf("Document Id: %v\n", theId)
+	t.Logf("Document Rev: %v\n", rev)
+	//Now read the copy
+	_, err = db.Read(copyId, &emptyDoc, nil)
+	errorify(t, err)
+	t.Logf("Document Title: %v\n", emptyDoc.Title)
+	t.Logf("Document Note: %v\n", emptyDoc.Note)
+	t.Logf("Copied Doc Rev: %v\n", copyRev)
+	deleteTestDb(t, dbName)
+}
+
 func TestDelete(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)

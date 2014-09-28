@@ -137,6 +137,7 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 	}
 }
 
+//Returns the Username associated with this Database connection
 func (db *Database) GetUsername() string {
 	return db.auth.Username
 }
@@ -164,6 +165,28 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 		return "", err
 	}
 	resp, err := db.connection.request("PUT", url, data, headers, db.auth)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return getRevInfo(resp)
+}
+
+//Copies a document into a new... document.
+//Returns the revision of the newly created document
+func (db *Database) Copy(fromId string, fromRev string, toId string) (string, error) {
+	url, err := buildUrl(db.dbName, fromId)
+	if err != nil {
+		return "", err
+	}
+	var headers = make(map[string]string)
+	headers["Accpet"] = "application/json"
+	if fromId == "" || fromRev == "" || toId == "" {
+		return "", fmt.Errorf("Invalid request.  All fields must be specified")
+	}
+	headers["If-Match"] = fromRev
+	headers["Destination"] = toId
+	resp, err := db.connection.request("COPY", url, nil, headers, db.auth)
 	if err != nil {
 		return "", err
 	}
