@@ -180,11 +180,13 @@ func (db *Database) Copy(fromId string, fromRev string, toId string) (string, er
 		return "", err
 	}
 	var headers = make(map[string]string)
-	headers["Accpet"] = "application/json"
-	if fromId == "" || fromRev == "" || toId == "" {
-		return "", fmt.Errorf("Invalid request.  All fields must be specified")
+	headers["Accept"] = "application/json"
+	if fromId == "" || toId == "" {
+		return "", fmt.Errorf("Invalid request.  Ids must be specified")
 	}
-	headers["If-Match"] = fromRev
+	if fromRev != ""{
+		headers["If-Match"] = fromRev
+	}
 	headers["Destination"] = toId
 	resp, err := db.connection.request("COPY", url, nil, headers, db.auth)
 	if err != nil {

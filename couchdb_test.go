@@ -222,7 +222,7 @@ func TestCopy(t *testing.T) {
 	errorify(t, err)
 	//Now copy it
 	copyId := getUuid()
-	copyRev, err := db.Copy(theId, rev, copyId)
+	copyRev, err := db.Copy(theId, "", copyId)
 	errorify(t, err)
 	t.Logf("Document Id: %v\n", theId)
 	t.Logf("Document Rev: %v\n", rev)
