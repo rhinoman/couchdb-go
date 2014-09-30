@@ -141,7 +141,9 @@ func buildParamUrl(params url.Values, pathSegments ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	Url.RawQuery = params.Encode()
-
+	Url.RawQuery, err = url.QueryUnescape(params.Encode())
+	if err != nil {
+		return "", err
+	}
 	return Url.String(), nil
 }

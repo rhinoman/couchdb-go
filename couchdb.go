@@ -184,7 +184,7 @@ func (db *Database) Copy(fromId string, fromRev string, toId string) (string, er
 	if fromId == "" || toId == "" {
 		return "", fmt.Errorf("Invalid request.  Ids must be specified")
 	}
-	if fromRev != ""{
+	if fromRev != "" {
 		headers["If-Match"] = fromRev
 	}
 	headers["Destination"] = toId

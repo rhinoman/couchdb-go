@@ -19,14 +19,14 @@ var couchReply couchWelcome
 func TestUrlBuilding(t *testing.T) {
 	params := url.Values{}
 	params.Add("Hello", "42")
-	params.Add("crazy", "me&joe")
+	params.Add("crazy", "\"me\"")
 	stringified, err := buildParamUrl(params, "theDb", "funny?chars")
 	if err != nil {
 		t.Fail()
 	}
 	t.Logf("The URL: %s\n", stringified)
 	//make sure everything is escaped
-	if stringified != "/theDb/funny%3Fchars?Hello=42&crazy=me%26joe" {
+	if stringified != "/theDb/funny%3Fchars?Hello=42&crazy=\"me\"" {
 		t.Fail()
 	}
 }
