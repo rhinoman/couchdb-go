@@ -144,8 +144,5 @@ func buildParamUrl(params url.Values, pathSegments ...string) (string, error) {
 	}
 	encodedString := params.Encode()
 	Url.RawQuery = strings.Replace(encodedString, "%22", "\"", -1)
-	if err != nil {
-		return "", err
-	}
 	return Url.String(), nil
 }
