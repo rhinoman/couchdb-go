@@ -270,6 +270,7 @@ func (db *Database) SaveAttachment(docId string,
 }
 
 //Gets an attachment.
+//TODO: This is simplistic and won't work very well for larger attachments.
 func (db *Database) GetAttachment(docId string, docRev string,
 	attType string, attName string) ([]byte, error) {
 	url, err := buildUrl(db.dbName, docId, attName)
@@ -291,6 +292,24 @@ func (db *Database) GetAttachment(docId string, docRev string,
 		return nil, err
 	}
 	return data, nil
+}
+
+//Deletes an attachment
+func (db *Database) DeleteAttachment(docId string, docRev string,
+	attName string) (string, error) {
+	url, err := buildUrl(db.dbName, docId, attName)
+	if err != nil {
+		return "", err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["If-Match"] = docRev
+	resp, err := db.connection.request("DELETE", url, nil, headers, db.auth)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return getRevInfo(resp)
 }
 
 type Members struct {
