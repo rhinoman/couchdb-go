@@ -182,6 +182,42 @@ func TestSave(t *testing.T) {
 	deleteTestDb(t, dbName)
 }
 
+func TestAttachment(t *testing.T) {
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	//Create a new document
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note:  "This one has attachments",
+	}
+	db := conn.SelectDB(dbName, couchdb.Auth{})
+	theId := getUuid()
+	//Save it
+	t.Logf("Saving document\n")
+	rev, err := db.Save(theDoc, theId, "")
+	errorify(t, err)
+	t.Logf("New Document Id: %s\n", theId)
+	t.Logf("New Document Rev: %s\n", rev)
+	t.Logf("New Document Title: %v\n", theDoc.Title)
+	t.Logf("New Document Note: %v\n", theDoc.Note)
+	//Create some content
+	content := []byte("This is my attachment")
+	//Now Add an attachment
+	uRev, err := db.SaveAttachment(theId, rev, "attachment", "text/plain", content)
+	errorify(t, err)
+	t.Logf("Updated Rev: %s\n", uRev)
+	//Now try to read it
+	theBytes, err := db.GetAttachment(theId, uRev, "text/plain", "attachment")
+	errorify(t, err)
+	t.Logf("how much data: %v\n", len(theBytes))
+	data := string(theBytes[:])
+	if data != "This is my attachment" {
+		t.Fail()
+	}
+	t.Logf("The data: %v\n", data)
+	deleteTestDb(t, dbName)
+}
+
 func TestRead(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)

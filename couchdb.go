@@ -2,7 +2,9 @@
 package couchdb
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -216,12 +218,11 @@ func (db *Database) Read(id string, doc interface{}, params *url.Values) (string
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 	err = parseBody(resp, &doc)
 	if err != nil {
-		resp.Body.Close()
 		return "", err
 	}
-	resp.Body.Close()
 	return getRevInfo(resp)
 }
 
@@ -242,6 +243,54 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 	}
 	resp.Body.Close()
 	return getRevInfo(resp)
+}
+
+//Saves an attachment.
+//docId and docRev refer to the parent document.
+//attType is the MIME type of the attachment (ex: image/jpeg) or some such.
+//attContent is a byte array containing the actual content.
+func (db *Database) SaveAttachment(docId string,
+	docRev string, attName string,
+	attType string, attContent []byte) (string, error) {
+	url, err := buildUrl(db.dbName, docId, attName)
+	if err != nil {
+		return "", err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["Content-Type"] = attType
+	headers["If-Match"] = docRev
+
+	resp, err := db.connection.request("PUT", url, bytes.NewReader(attContent), headers, db.auth)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+	return getRevInfo(resp)
+}
+
+//Gets an attachment.
+func (db *Database) GetAttachment(docId string, docRev string,
+	attType string, attName string) ([]byte, error) {
+	url, err := buildUrl(db.dbName, docId, attName)
+	if err != nil {
+		return nil, err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = attType
+	if docRev != "" {
+		headers["If-Match"] = docRev
+	}
+	resp, err := db.connection.request("GET", url, nil, headers, db.auth)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 type Members struct {
@@ -267,12 +316,11 @@ func (db *Database) GetSecurity() (*Security, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	err = parseBody(resp, &sec)
 	if err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
-	resp.Body.Close()
 	return &sec, err
 }
 
@@ -315,12 +363,11 @@ func (db *Database) GetView(designDoc string, view string,
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	err = parseBody(resp, &results)
 	if err != nil {
-		resp.Body.Close()
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
