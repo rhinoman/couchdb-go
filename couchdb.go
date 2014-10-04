@@ -2,9 +2,8 @@
 package couchdb
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -251,7 +250,7 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 //attContent is a byte array containing the actual content.
 func (db *Database) SaveAttachment(docId string,
 	docRev string, attName string,
-	attType string, attContent []byte) (string, error) {
+	attType string, attContent io.Reader) (string, error) {
 	url, err := buildUrl(db.dbName, docId, attName)
 	if err != nil {
 		return "", err
@@ -261,7 +260,7 @@ func (db *Database) SaveAttachment(docId string,
 	headers["Content-Type"] = attType
 	headers["If-Match"] = docRev
 
-	resp, err := db.connection.request("PUT", url, bytes.NewReader(attContent), headers, db.auth)
+	resp, err := db.connection.request("PUT", url, attContent, headers, db.auth)
 	if err != nil {
 		return "", err
 	}
@@ -270,9 +269,10 @@ func (db *Database) SaveAttachment(docId string,
 }
 
 //Gets an attachment.
-//TODO: This is simplistic and won't work very well for larger attachments.
+//Returns an io.Reader -- the onus is on the caller to close it.
+//Please close it.
 func (db *Database) GetAttachment(docId string, docRev string,
-	attType string, attName string) ([]byte, error) {
+	attType string, attName string) (io.ReadCloser, error) {
 	url, err := buildUrl(db.dbName, docId, attName)
 	if err != nil {
 		return nil, err
@@ -286,12 +286,7 @@ func (db *Database) GetAttachment(docId string, docRev string,
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return resp.Body, nil
 }
 
 //Deletes an attachment

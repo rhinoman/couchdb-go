@@ -1,8 +1,10 @@
 package couchdb_test
 
 import (
+	"bytes"
 	"github.com/rhinoman/couchdb-go"
 	"github.com/twinj/uuid"
+	"io/ioutil"
 	"strconv"
 	"testing"
 	"time"
@@ -202,12 +204,16 @@ func TestAttachment(t *testing.T) {
 	t.Logf("New Document Note: %v\n", theDoc.Note)
 	//Create some content
 	content := []byte("This is my attachment")
+	contentReader := bytes.NewReader(content)
 	//Now Add an attachment
-	uRev, err := db.SaveAttachment(theId, rev, "attachment", "text/plain", content)
+	uRev, err := db.SaveAttachment(theId, rev, "attachment", "text/plain", contentReader)
 	errorify(t, err)
 	t.Logf("Updated Rev: %s\n", uRev)
 	//Now try to read it
-	theBytes, err := db.GetAttachment(theId, uRev, "text/plain", "attachment")
+	theContent, err := db.GetAttachment(theId, uRev, "text/plain", "attachment")
+	errorify(t, err)
+	defer theContent.Close()
+	theBytes, err := ioutil.ReadAll(theContent)
 	errorify(t, err)
 	t.Logf("how much data: %v\n", len(theBytes))
 	data := string(theBytes[:])
