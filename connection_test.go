@@ -26,7 +26,7 @@ func TestUrlBuilding(t *testing.T) {
 	}
 	t.Logf("The URL: %s\n", stringified)
 	//make sure everything is escaped
-	if stringified != "/theDb/funny%3Fchars?Hello=42&crazy=\"me%26bo\"" {
+	if stringified != "/theDb/funny%3Fchars?Hello=42&crazy=%22me%26bo%22" {
 		t.Fail()
 	}
 }

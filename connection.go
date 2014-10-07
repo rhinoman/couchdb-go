@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
+	//	"strings"
 )
 
 //represents a couchdb 'connection'
@@ -142,7 +142,6 @@ func buildParamUrl(params url.Values, pathSegments ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	encodedString := params.Encode()
-	Url.RawQuery = strings.Replace(encodedString, "%22", "\"", -1)
+	Url.RawQuery = params.Encode()
 	return Url.String(), nil
 }
