@@ -14,7 +14,7 @@ var timeout = time.Duration(500 * time.Millisecond)
 var unittestdb = "unittestdb"
 var server = "127.0.0.1"
 var numDbs = 1
-var adminAuth = couchdb.Auth{Username: "adminuser", Password: "password"}
+var adminAuth = couchdb.BasicAuth{Username: "adminuser", Password: "password"}
 
 type TestDocument struct {
 	Title string
@@ -155,7 +155,7 @@ func TestSave(t *testing.T) {
 		Title: "My Document",
 		Note:  "This is my note",
 	}
-	db := conn.SelectDB(dbName, couchdb.Auth{})
+	db := conn.SelectDB(dbName, nil)
 	theId := getUuid()
 	//Save it
 	t.Logf("Saving first\n")
@@ -192,7 +192,7 @@ func TestAttachment(t *testing.T) {
 		Title: "My Document",
 		Note:  "This one has attachments",
 	}
-	db := conn.SelectDB(dbName, couchdb.Auth{})
+	db := conn.SelectDB(dbName, nil)
 	theId := getUuid()
 	//Save it
 	t.Logf("Saving document\n")
@@ -231,7 +231,7 @@ func TestAttachment(t *testing.T) {
 func TestRead(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
-	db := conn.SelectDB(dbName, couchdb.Auth{})
+	db := conn.SelectDB(dbName, nil)
 	//Create a test doc
 	theDoc := TestDocument{
 		Title: "My Document",
@@ -255,7 +255,7 @@ func TestRead(t *testing.T) {
 func TestCopy(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
-	db := conn.SelectDB(dbName, couchdb.Auth{})
+	db := conn.SelectDB(dbName, nil)
 	//Create a test doc
 	theDoc := TestDocument{
 		Title: "My Document",
@@ -284,7 +284,7 @@ func TestCopy(t *testing.T) {
 func TestDelete(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
-	db := conn.SelectDB(dbName, couchdb.Auth{})
+	db := conn.SelectDB(dbName, nil)
 	//Create a test doc
 	theDoc := TestDocument{
 		Title: "My Document",
@@ -308,6 +308,7 @@ func TestDelete(t *testing.T) {
 func TestAddUser(t *testing.T) {
 	conn := getConnection(t)
 	//Save a User
+	t.Logf("AdminAuth: %v\n", adminAuth)
 	rev, err := conn.AddUser("turd.ferguson",
 		"passw0rd", []string{"loser"}, adminAuth)
 	errorify(t, err)

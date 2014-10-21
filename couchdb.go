@@ -10,15 +10,12 @@ import (
 	"time"
 )
 
-//Contains Authentication info: Username and password
-type Auth struct{ Username, Password string }
-
 type Connection struct{ *connection }
 
 type Database struct {
 	dbName     string
 	connection *Connection
-	auth       *Auth
+	auth       Auth
 }
 
 //Creates a regular http connection.
@@ -80,7 +77,7 @@ func (conn *Connection) CreateDB(name string, auth Auth) error {
 	if err != nil {
 		return err
 	}
-	resp, err := conn.request("PUT", url, nil, nil, &auth)
+	resp, err := conn.request("PUT", url, nil, nil, auth)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -93,7 +90,7 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 	if err != nil {
 		return err
 	}
-	resp, err := conn.request("DELETE", url, nil, nil, &auth)
+	resp, err := conn.request("DELETE", url, nil, nil, auth)
 	if err == nil {
 		resp.Body.Close()
 	}
@@ -134,14 +131,14 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 	return &Database{
 		dbName:     dbName,
 		connection: conn,
-		auth:       &Auth{auth.Username, auth.Password},
+		auth:       auth,
 	}
 }
 
 //Returns the Username associated with this Database connection
-func (db *Database) GetUsername() string {
+/*func (db *Database) GetUsername() string {
 	return db.auth.Username
-}
+}*/
 
 //Save a document to the database.
 //If you're creating a new document, pass an empty string for rev.
