@@ -49,8 +49,8 @@ type Error struct {
 
 //stringify the error
 func (err *Error) Error() string {
-	return fmt.Sprintf("[Error] %v %v: %v %v %v",
-		err.Method, err.URL, err.StatusCode, err.ErrorCode, err.Reason)
+	return fmt.Sprintf("[Error] %v: %v %v - %v %v",
+		err.StatusCode, err.Method, err.URL, err.ErrorCode, err.Reason)
 }
 
 //extracts rev code from header
