@@ -49,7 +49,7 @@ type Error struct {
 
 //stringify the error
 func (err *Error) Error() string {
-	return fmt.Sprintf("[Error] %v: %v %v - %v %v",
+	return fmt.Sprintf("[Error]:%v: %v %v - %v %v",
 		err.StatusCode, err.Method, err.URL, err.ErrorCode, err.Reason)
 }
 
