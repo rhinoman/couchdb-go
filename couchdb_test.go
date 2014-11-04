@@ -305,7 +305,7 @@ func TestDelete(t *testing.T) {
 	deleteTestDb(t, dbName)
 }
 
-func TestAddUser(t *testing.T) {
+func TestUser(t *testing.T) {
 	conn := getConnection(t)
 	//Save a User
 	t.Logf("AdminAuth: %v\n", adminAuth)
@@ -316,6 +316,31 @@ func TestAddUser(t *testing.T) {
 	if rev == "" {
 		t.Fail()
 	}
+	//grant a role
+	rev, err = conn.GrantRole("turd.ferguson",
+		"fool", adminAuth)
+	errorify(t,err)
+	t.Logf("Updated Rev: %v\n", rev)
+	//read the user
+	userData := couchdb.UserRecord{}
+	rev, err = conn.GetUser("turd.ferguson", &userData, adminAuth)
+	errorify(t, err)
+	if len(userData.Roles) != 2{
+		t.Error("Not enough roles")
+	}
+	t.Logf("Roles: %v", userData.Roles)
+	//revoke a role
+	rev, err = conn.RevokeRole("turd.ferguson",
+		"loser", adminAuth)
+	errorify(t,err)
+	t.Logf("Updated Rev: %v\n", rev)
+	//read the user
+	rev, err = conn.GetUser("turd.ferguson",&userData,adminAuth)
+	errorify(t,err)
+	if len(userData.Roles) != 1{
+		t.Error("should only be 1 role")
+	}
+	t.Logf("Roles: %v", userData.Roles)
 	dRev, err := conn.DeleteUser("turd.ferguson", rev, adminAuth)
 	errorify(t, err)
 	t.Logf("Del User Rev: %v\n", dRev)

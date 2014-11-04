@@ -97,6 +97,14 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 	return err
 }
 
+type UserRecord struct {
+	Name     string   `json:"name"`
+	Password string   `json:"password"`
+	Roles    []string `json:"roles"`
+	TheType  string   `json:"type"` //apparently type is a keyword in Go :)
+
+}
+
 //Add a User.
 //This is a convenience method for adding a simple user to CouchDB.
 //If you need a User with custom fields, etc., you'll just have to use the
@@ -104,17 +112,54 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 func (conn *Connection) AddUser(username string, password string,
 	roles []string, auth Auth) (string, error) {
 
-	userData := struct {
-		Name     string   `json:"name"`
-		Password string   `json:"password"`
-		Roles    []string `json:"roles"`
-		TheType  string   `json:"type"` //apparently type is a keyword in Go :)
-	}{username, password, roles, "user"}
-
+	userData := UserRecord{username, password, roles, "user"}
 	userDb := conn.SelectDB("_users", auth)
 	namestring := "org.couchdb.user:" + userData.Name
 	return userDb.Save(userData, namestring, "")
 
+}
+
+//Grants a role to a user
+func (conn *Connection) GrantRole(username string, role string,
+	auth Auth) (string, error) {
+	userDb := conn.SelectDB("_users", auth)
+	namestring := "org.couchdb.user:" + username
+	userData := UserRecord{}
+
+	rev, err := userDb.Read(namestring, &userData, nil)
+	if err != nil {
+		return "", err
+	}
+	userData.Roles = append(userData.Roles, role)
+	return userDb.Save(userData, namestring, rev)
+}
+
+//Revoke a user role
+func (conn *Connection) RevokeRole(username string, role string,
+	auth Auth) (string, error) {
+
+	userDb := conn.SelectDB("_users", auth)
+	namestring := "org.couchdb.user:" + username
+	userData := UserRecord{}
+	rev, err := userDb.Read(namestring, &userData, nil)
+	if err != nil {
+		return "", err
+	}
+	for i, r := range userData.Roles {
+		if r == role{
+			userData.Roles = append(userData.Roles[:i], userData.Roles[i+1:]...)
+			break
+		}
+	}
+	return userDb.Save(userData, namestring, rev)
+}
+
+//Fetch a user record
+func (conn *Connection) GetUser(username string, userData interface{}, 
+	auth Auth) (string, error){
+	userDb := conn.SelectDB("_users", auth)
+	namestring := "org.couchdb.user:" + username
+	return userDb.Read(namestring, &userData, nil)
 }
 
 //Delete a user.
