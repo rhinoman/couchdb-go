@@ -146,7 +146,7 @@ func (conn *Connection) RevokeRole(username string, role string,
 		return "", err
 	}
 	for i, r := range userData.Roles {
-		if r == role{
+		if r == role {
 			userData.Roles = append(userData.Roles[:i], userData.Roles[i+1:]...)
 			break
 		}
@@ -155,8 +155,8 @@ func (conn *Connection) RevokeRole(username string, role string,
 }
 
 //Fetch a user record
-func (conn *Connection) GetUser(username string, userData interface{}, 
-	auth Auth) (string, error){
+func (conn *Connection) GetUser(username string, userData interface{},
+	auth Auth) (string, error) {
 	userDb := conn.SelectDB("_users", auth)
 	namestring := "org.couchdb.user:" + username
 	return userDb.Read(namestring, &userData, nil)
