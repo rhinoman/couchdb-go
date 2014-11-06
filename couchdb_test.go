@@ -306,16 +306,23 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUser(t *testing.T) {
+	dbName := createTestDb(t)
 	conn := getConnection(t)
 	//Save a User
 	t.Logf("AdminAuth: %v\n", adminAuth)
 	rev, err := conn.AddUser("turd.ferguson",
-		"passw0rd", []string{"loser"}, adminAuth)
+		"password", []string{"loser"}, adminAuth)
 	errorify(t, err)
 	t.Logf("User Rev: %v\n", rev)
 	if rev == "" {
 		t.Fail()
 	}
+	//check user can access db
+	db := conn.SelectDB(dbName, couchdb.BasicAuth{"turd.ferguson", "password"})
+	theId := getUuid()
+	docRev, err := db.Save(&TestDocument{Title: "My doc"}, theId, "")
+	errorify(t, err)
+	t.Logf("Granting role to user")
 	//grant a role
 	rev, err = conn.GrantRole("turd.ferguson",
 		"fool", adminAuth)
@@ -329,6 +336,10 @@ func TestUser(t *testing.T) {
 		t.Error("Not enough roles")
 	}
 	t.Logf("Roles: %v", userData.Roles)
+	//check user can access db
+	docRev, err = db.Save(&TestDocument{Title: "My doc"}, getUuid(), docRev)
+	errorify(t, err)
+
 	//revoke a role
 	rev, err = conn.RevokeRole("turd.ferguson",
 		"loser", adminAuth)
@@ -347,6 +358,7 @@ func TestUser(t *testing.T) {
 	if rev == dRev || dRev == "" {
 		t.Fail()
 	}
+	deleteTestDb(t, dbName)
 }
 
 func TestSecurity(t *testing.T) {

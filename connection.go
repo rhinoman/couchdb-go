@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
 
 //represents a couchdb 'connection'
@@ -18,6 +20,7 @@ type connection struct {
 //processes a request
 func (conn *connection) request(method, path string,
 	body io.Reader, headers map[string]string, auth Auth) (*http.Response, error) {
+
 	req, err := http.NewRequest(method, conn.url+path, body)
 	//set headers
 	for k, v := range headers {
@@ -29,9 +32,28 @@ func (conn *connection) request(method, path string,
 	if auth != nil {
 		auth.AddAuthHeaders(req)
 	}
+	return conn.processResponse(0, req)
+}
+
+func (conn *connection) processResponse(numTries int,
+	req *http.Request) (*http.Response, error) {
+
 	resp, err := conn.client.Do(req)
 	if err != nil {
-		return nil, err
+		errStr := err.Error()
+		//Because sometimes couchdb rudely
+		//slams the connection shut and we get a race condition
+		//Of course, Go http presents one of two possibilities
+		//for error strings, so we check for both.
+		if (strings.Contains(errStr, "EOF") ||
+			strings.Contains(errStr, "broken connection")) && numTries < 3 {
+			//wait a bit and try again
+			time.Sleep(10 * time.Millisecond)
+			numTries += 1
+			return conn.processResponse(numTries, req)
+		} else {
+			return nil, err
+		}
 	} else if resp.StatusCode >= 400 {
 		return resp, parseError(resp)
 	} else {

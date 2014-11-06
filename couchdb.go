@@ -98,10 +98,14 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 }
 
 type UserRecord struct {
-	Name     string   `json:"name"`
-	Password string   `json:"password"`
-	Roles    []string `json:"roles"`
-	TheType  string   `json:"type"` //apparently type is a keyword in Go :)
+	Name           string   `json:"name"`
+	Password       string   `json:"password,omitempty"`
+	DerivedKey     string   `json:"derived_key,omitempty"`
+	Salt           string   `json:"salt,omitempty"`
+	PasswordScheme string   `json:"password_scheme,omitempty"`
+	Iterations     int      `json:"iterations,omitempty"`
+	Roles          []string `json:"roles"`
+	TheType        string   `json:"type"` //apparently type is a keyword in Go :)
 
 }
 
@@ -112,10 +116,14 @@ type UserRecord struct {
 func (conn *Connection) AddUser(username string, password string,
 	roles []string, auth Auth) (string, error) {
 
-	userData := UserRecord{username, password, roles, "user"}
+	userData := UserRecord{
+		Name:     username,
+		Password: password,
+		Roles:    roles,
+		TheType:  "user"}
 	userDb := conn.SelectDB("_users", auth)
 	namestring := "org.couchdb.user:" + userData.Name
-	return userDb.Save(userData, namestring, "")
+	return userDb.Save(&userData, namestring, "")
 
 }
 
@@ -131,7 +139,8 @@ func (conn *Connection) GrantRole(username string, role string,
 		return "", err
 	}
 	userData.Roles = append(userData.Roles, role)
-	return userDb.Save(userData, namestring, rev)
+	fmt.Printf("USER: %v", userData)
+	return userDb.Save(&userData, namestring, rev)
 }
 
 //Revoke a user role
