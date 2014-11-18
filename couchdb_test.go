@@ -323,6 +323,13 @@ func TestUser(t *testing.T) {
 	docRev, err := db.Save(&TestDocument{Title: "My doc"}, theId, "")
 	errorify(t, err)
 	t.Logf("Granting role to user")
+	//check session info
+	authInfo, err := conn.GetAuthInfo(couchdb.BasicAuth{"turd.ferguson", "password"})
+	errorify(t, err)
+	t.Logf("AuthInfo: %v", authInfo)
+	if authInfo.UserCtx.Name != "turd.ferguson" {
+		t.Errorf("UserCtx name wrong: %v", authInfo.UserCtx.Name)
+	}
 	//grant a role
 	rev, err = conn.GrantRole("turd.ferguson",
 		"fool", adminAuth)

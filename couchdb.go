@@ -163,6 +163,44 @@ func (conn *Connection) RevokeRole(username string, role string,
 	return userDb.Save(userData, namestring, rev)
 }
 
+type UserContext struct {
+	Name  string   `json:"name"`
+	Roles []string `json:"roles"`
+}
+
+type AuthInfo struct {
+	Authenticated          string   `json:"authenticated"`
+	AuthenticationDb       string   `json:"authentication_db"`
+	AuthenticationHandlers []string `json:"authentication_handlers"`
+}
+
+type AuthInfoResponse struct {
+	Info    AuthInfo    `json:"info"`
+	Ok      bool        `json:"ok"`
+	UserCtx UserContext `json:"userCtx"`
+}
+
+//Returns auth information for a user
+func (conn *Connection) GetAuthInfo(auth Auth) (*AuthInfoResponse, error) {
+	authInfo := AuthInfoResponse{}
+	sessUrl, err := buildUrl("_session")
+	if err != nil {
+		return nil, err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	resp, err := conn.request("GET", sessUrl, nil, headers, auth)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	err = parseBody(resp, &authInfo)
+	if err != nil {
+		return nil, err
+	}
+	return &authInfo, nil
+}
+
 //Fetch a user record
 func (conn *Connection) GetUser(username string, userData interface{},
 	auth Auth) (string, error) {
