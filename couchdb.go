@@ -139,7 +139,6 @@ func (conn *Connection) GrantRole(username string, role string,
 		return "", err
 	}
 	userData.Roles = append(userData.Roles, role)
-	fmt.Printf("USER: %v", userData)
 	return userDb.Save(&userData, namestring, rev)
 }
 
