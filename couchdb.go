@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"reflect"
+	"errors"
 )
 
 type Connection struct{ *connection }
@@ -100,10 +102,6 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 type UserRecord struct {
 	Name           string   `json:"name"`
 	Password       string   `json:"password,omitempty"`
-	DerivedKey     string   `json:"derived_key,omitempty"`
-	Salt           string   `json:"salt,omitempty"`
-	PasswordScheme string   `json:"password_scheme,omitempty"`
-	Iterations     int      `json:"iterations,omitempty"`
 	Roles          []string `json:"roles"`
 	TheType        string   `json:"type"` //apparently type is a keyword in Go :)
 
@@ -132,14 +130,22 @@ func (conn *Connection) GrantRole(username string, role string,
 	auth Auth) (string, error) {
 	userDb := conn.SelectDB("_users", auth)
 	namestring := "org.couchdb.user:" + username
-	userData := UserRecord{}
+	var userData interface{}
 
 	rev, err := userDb.Read(namestring, &userData, nil)
 	if err != nil {
 		return "", err
 	}
-	userData.Roles = append(userData.Roles, role)
-	return userDb.Save(&userData, namestring, rev)
+	if reflect.ValueOf(userData).Kind() != reflect.Map{
+		return "", errors.New("Type Error")
+	}
+	userMap := userData.(map[string]interface{})
+	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice{
+		return "", errors.New("Type Error")
+	}
+	userRoles := userMap["roles"].([]interface{})
+	userMap["roles"] = append(userRoles, role)
+	return userDb.Save(&userMap, namestring, rev)
 }
 
 //Revoke a user role
@@ -148,18 +154,27 @@ func (conn *Connection) RevokeRole(username string, role string,
 
 	userDb := conn.SelectDB("_users", auth)
 	namestring := "org.couchdb.user:" + username
-	userData := UserRecord{}
+	var userData interface{}
 	rev, err := userDb.Read(namestring, &userData, nil)
 	if err != nil {
 		return "", err
 	}
-	for i, r := range userData.Roles {
+	if reflect.ValueOf(userData).Kind() != reflect.Map{
+		return "", errors.New("Type Error")
+	}
+	userMap := userData.(map[string]interface{})
+	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice{
+		return "", errors.New("Type Error")
+	}
+	userRoles := userMap["roles"].([]interface{})
+	for i, r := range userRoles {
 		if r == role {
-			userData.Roles = append(userData.Roles[:i], userData.Roles[i+1:]...)
+			userRoles = append(userRoles[:i], userRoles[i+1:]...)
 			break
 		}
 	}
-	return userDb.Save(userData, namestring, rev)
+	userMap["roles"] = userRoles
+	return userDb.Save(&userMap, namestring, rev)
 }
 
 type UserContext struct {
