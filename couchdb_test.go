@@ -32,14 +32,27 @@ type ViewResponse struct {
 	Rows      []ViewResult `json:"rows,omitempty"`
 }
 
+type ListResult struct {
+	Id    string       `json:"id"`
+	Key   TestDocument `json:"key"`
+	Value string       `json:"value"`
+}
+
+type ListResponse struct {
+	TotalRows int          `json:"total_rows"`
+	Offset    int          `json:"offset"`
+	Rows      []ListResult `json:"rows,omitempty"`
+}
+
 type View struct {
 	Map    string `json:"map"`
 	Reduce string `json:"reduce,omitempty"`
 }
 
 type DesignDocument struct {
-	Language string          `json:"language"`
-	Views    map[string]View `json:"views"`
+	Language string            `json:"language"`
+	Views    map[string]View   `json:"views"`
+	Lists    map[string]string `json:"lists"`
 }
 
 func getUuid() string {
@@ -410,9 +423,26 @@ func TestDesignDocs(t *testing.T) {
 	}
 	views := make(map[string]View)
 	views["find_all_magenta"] = view
+	lists := make(map[string]string)
+
+	lists["getList"] =
+		`function(head, req){
+			var row;
+			var response={
+				total_rows:0,
+				offset:0, 
+				rows:[]
+			};
+			while(row=getRow()){
+				response.rows.push(row);
+			}
+			send(toJSON(response))
+		}`
+
 	ddoc := DesignDocument{
 		Language: "javascript",
 		Views:    views,
+		Lists:    lists,
 	}
 	rev, err := db.SaveDesignDoc("colors", ddoc, "")
 	errorify(t, err)
@@ -431,7 +461,19 @@ func TestDesignDocs(t *testing.T) {
 	} else {
 		t.Logf("Results: %v\n", result.Rows)
 	}
-
+	listResult := ListResponse{}
+	err = db.GetList("colors", "getList", "find_all_magenta", &listResult, nil)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+	}
+	errorify(t, err)
+	if len(listResult.Rows) != 5 {
+		t.Logf("List Result: %v\n", listResult)
+		t.Logf("docList length: %v\n", len(listResult.Rows))
+		t.Fail()
+	} else {
+		t.Logf("List Results: %v\n", listResult.Rows)
+	}
 	deleteTestDb(t, dbName)
 
 }

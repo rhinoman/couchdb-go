@@ -2,14 +2,14 @@
 package couchdb
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"time"
-	"reflect"
-	"errors"
 )
 
 type Connection struct{ *connection }
@@ -100,10 +100,10 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 }
 
 type UserRecord struct {
-	Name           string   `json:"name"`
-	Password       string   `json:"password,omitempty"`
-	Roles          []string `json:"roles"`
-	TheType        string   `json:"type"` //apparently type is a keyword in Go :)
+	Name     string   `json:"name"`
+	Password string   `json:"password,omitempty"`
+	Roles    []string `json:"roles"`
+	TheType  string   `json:"type"` //apparently type is a keyword in Go :)
 
 }
 
@@ -136,11 +136,11 @@ func (conn *Connection) GrantRole(username string, role string,
 	if err != nil {
 		return "", err
 	}
-	if reflect.ValueOf(userData).Kind() != reflect.Map{
+	if reflect.ValueOf(userData).Kind() != reflect.Map {
 		return "", errors.New("Type Error")
 	}
 	userMap := userData.(map[string]interface{})
-	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice{
+	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice {
 		return "", errors.New("Type Error")
 	}
 	userRoles := userMap["roles"].([]interface{})
@@ -159,11 +159,11 @@ func (conn *Connection) RevokeRole(username string, role string,
 	if err != nil {
 		return "", err
 	}
-	if reflect.ValueOf(userData).Kind() != reflect.Map{
+	if reflect.ValueOf(userData).Kind() != reflect.Map {
 		return "", errors.New("Type Error")
 	}
 	userMap := userData.(map[string]interface{})
-	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice{
+	if reflect.ValueOf(userMap["roles"]).Kind() != reflect.Slice {
 		return "", errors.New("Type Error")
 	}
 	userRoles := userMap["roles"].([]interface{})
@@ -477,6 +477,36 @@ func (db *Database) GetView(designDoc string, view string,
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
 	resp, err := db.connection.request("GET", url, nil, headers, db.auth)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	err = parseBody(resp, &results)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//Get the result of a list operation
+//This assumes your list function in couchdb returns JSON
+func (db *Database) GetList(designDoc string, list string,
+	view string, results interface{}, params *url.Values) error {
+	var err error
+	var url string
+	if params == nil {
+		url, err = buildUrl(db.dbName, "_design", designDoc, "_list",
+			list, view)
+	} else {
+		url, err = buildParamUrl(*params, db.dbName, "_design", designDoc,
+			"_list", list, view)
+	}
+	if err != nil {
+		return err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	resp, err := db.connection.request("GET", url, nil, nil, db.auth)
 	if err != nil {
 		return err
 	}
