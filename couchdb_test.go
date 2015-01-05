@@ -426,10 +426,8 @@ func TestSessions(t *testing.T) {
 		t.Fail()
 	}
 	//Create a session for the user
-	token, err := conn.CreateSession("turd.ferguson", "password")
+	cookieAuth, err := conn.CreateSession("turd.ferguson", "password")
 	errorify(t, err)
-	t.Logf("Token: %v", token)
-	cookieAuth := couchdb.CookieAuth{AuthToken: token}
 	//Create something
 	db := conn.SelectDB(dbName, cookieAuth)
 	theId := getUuid()
