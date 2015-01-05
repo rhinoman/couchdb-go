@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -194,6 +195,49 @@ type AuthInfoResponse struct {
 	UserCtx UserContext `json:"userCtx"`
 }
 
+//Creates a session using the Couchdb session api.  Returns auth token on success
+func (conn *Connection) CreateSession(username string,
+	password string) (string, error) {
+	sessUrl, err := buildUrl("_session")
+	if err != nil {
+		return "", err
+	}
+	var headers = make(map[string]string)
+	body := "name=" + username + "&password=" + password
+	headers["Content-Type"] = "application/x-www-form-urlencoded"
+	resp, err := conn.request("POST", sessUrl,
+		strings.NewReader(body), headers, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	authToken := func() string {
+		for _, cookie := range resp.Cookies() {
+			if cookie.Name == "AuthSession" {
+				return cookie.Value
+			}
+		}
+		return ""
+	}()
+	return authToken, nil
+}
+
+//Destroys a session (user log out, etc.)
+func (conn *Connection) DestroySession(auth CookieAuth) error {
+	sessUrl, err := buildUrl("_session")
+	if err != nil {
+		return err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	resp, err := conn.request("DELETE", sessUrl, nil, headers, auth)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
 //Returns auth information for a user
 func (conn *Connection) GetAuthInfo(auth Auth) (*AuthInfoResponse, error) {
 	authInfo := AuthInfoResponse{}
@@ -240,11 +284,6 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 		auth:       auth,
 	}
 }
-
-//Returns the Username associated with this Database connection
-/*func (db *Database) GetUsername() string {
-	return db.auth.Username
-}*/
 
 //Save a document to the database.
 //If you're creating a new document, pass an empty string for rev.

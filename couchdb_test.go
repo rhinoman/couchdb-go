@@ -33,9 +33,9 @@ type ViewResponse struct {
 }
 
 type ListResult struct {
-	Id    string       `json:"id"`
-	Key   TestDocument `json:"key"`
-	Value string       `json:"value"`
+	Id  string       `json:"id"`
+	Key TestDocument `json:"key"`
+	//Value string       `json:"value"`
 }
 
 type ListResponse struct {
@@ -159,7 +159,6 @@ func TestCreateDB(t *testing.T) {
 	err = conn.DeleteDB("testcreatedb", adminAuth)
 	errorify(t, err)
 }
-
 func TestSave(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
@@ -412,6 +411,36 @@ func TestSecurity(t *testing.T) {
 	deleteTestDb(t, dbName)
 }
 
+func TestSessions(t *testing.T) {
+	conn := getConnection(t)
+	dbName := createTestDb(t)
+	defer deleteTestDb(t, dbName)
+	//Save a User
+	t.Logf("AdminAuth: %v\n", adminAuth)
+	rev, err := conn.AddUser("turd.ferguson",
+		"password", []string{"loser"}, adminAuth)
+	errorify(t, err)
+	t.Logf("User Rev: %v\n", rev)
+	defer conn.DeleteUser("turd.ferguson", rev, adminAuth)
+	if rev == "" {
+		t.Fail()
+	}
+	//Create a session for the user
+	token, err := conn.CreateSession("turd.ferguson", "password")
+	errorify(t, err)
+	t.Logf("Token: %v", token)
+	cookieAuth := couchdb.CookieAuth{AuthToken: token}
+	//Create something
+	db := conn.SelectDB(dbName, cookieAuth)
+	theId := getUuid()
+	docRev, err := db.Save(&TestDocument{Title: "The test doc"}, theId, "")
+	errorify(t, err)
+	t.Logf("Document Rev: %v", docRev)
+	//Delete the user session
+	err = conn.DestroySession(cookieAuth)
+	errorify(t, err)
+}
+
 func TestDesignDocs(t *testing.T) {
 	conn := getConnection(t)
 	dbName := createTestDb(t)
@@ -436,6 +465,7 @@ func TestDesignDocs(t *testing.T) {
 			while(row=getRow()){
 				response.rows.push(row);
 			}
+			response.total_rows = response.rows.length;
 			send(toJSON(response))
 		}`
 
@@ -472,7 +502,7 @@ func TestDesignDocs(t *testing.T) {
 		t.Logf("docList length: %v\n", len(listResult.Rows))
 		t.Fail()
 	} else {
-		t.Logf("List Results: %v\n", listResult.Rows)
+		t.Logf("List Results: %v\n", listResult)
 	}
 	deleteTestDb(t, dbName)
 
