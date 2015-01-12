@@ -197,10 +197,10 @@ type AuthInfoResponse struct {
 
 //Creates a session using the Couchdb session api.  Returns auth token on success
 func (conn *Connection) CreateSession(username string,
-	password string) (CookieAuth, error) {
+	password string) (*CookieAuth, error) {
 	sessUrl, err := buildUrl("_session")
 	if err != nil {
-		return CookieAuth{}, err
+		return &CookieAuth{}, err
 	}
 	var headers = make(map[string]string)
 	body := "name=" + username + "&password=" + password
@@ -208,7 +208,7 @@ func (conn *Connection) CreateSession(username string,
 	resp, err := conn.request("POST", sessUrl,
 		strings.NewReader(body), headers, nil)
 	if err != nil {
-		return CookieAuth{}, err
+		return &CookieAuth{}, err
 	}
 	defer resp.Body.Close()
 	authToken := func() string {
@@ -219,11 +219,11 @@ func (conn *Connection) CreateSession(username string,
 		}
 		return ""
 	}()
-	return CookieAuth{AuthToken: authToken}, nil
+	return &CookieAuth{AuthToken: authToken}, nil
 }
 
 //Destroys a session (user log out, etc.)
-func (conn *Connection) DestroySession(auth CookieAuth) error {
+func (conn *Connection) DestroySession(auth *CookieAuth) error {
 	sessUrl, err := buildUrl("_session")
 	if err != nil {
 		return err

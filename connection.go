@@ -32,7 +32,11 @@ func (conn *connection) request(method, path string,
 	if auth != nil {
 		auth.AddAuthHeaders(req)
 	}
-	return conn.processResponse(0, req)
+	resp, err := conn.processResponse(0, req)
+	if err == nil && resp != nil && auth != nil {
+		auth.updateAuth(resp)
+	}
+	return resp, err
 }
 
 func (conn *connection) processResponse(numTries int,
