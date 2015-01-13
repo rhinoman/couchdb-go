@@ -14,7 +14,7 @@ type Auth interface {
 	updateAuth(*http.Response)
 	//Sets updated auth (headers, cookies, etc.) in an http response
 	//For the update function, the map keys are cookie and/or header names
-	SetUpdatedAuth(*http.Response, func(*http.Response, map[string]string))
+	GetUpdatedAuth() map[string]string
 	//Purely for debug purposes.  Do not call, ever.
 	DebugString() string
 }
@@ -76,21 +76,20 @@ func (pta *PassThroughAuth) updateAuth(resp *http.Response) {}
 
 //Get Updated Auth
 //Does nothing for BasicAuth
-func (ba *BasicAuth) SetUpdatedAuth(resp *http.Response,
-	af func(*http.Response, map[string]string)) {
+func (ba *BasicAuth) GetUpdatedAuth() map[string]string {
+	return nil
 }
 
 //Does nothing for PassThroughAuth
-func (pta *PassThroughAuth) SetUpdatedAuth(resp *http.Response,
-	af func(*http.Response, map[string]string)) {
+func (pta *PassThroughAuth) GetUpdatedAuth() map[string]string {
+	return nil
 }
 
 //Set AuthSession Cookie
-func (ca *CookieAuth) SetUpdatedAuth(resp *http.Response,
-	af func(*http.Response, map[string]string)) {
+func (ca *CookieAuth) GetUpdatedAuth() map[string]string {
 	am := make(map[string]string)
 	am["AuthSession"] = ca.UpdatedAuthToken
-	af(resp, am)
+	return am
 }
 
 //Return a Debug string

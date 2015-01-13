@@ -436,7 +436,7 @@ func TestSessions(t *testing.T) {
 	docRev, err := db.Save(&TestDocument{Title: "The test doc"}, theId, "")
 	errorify(t, err)
 	t.Logf("Document Rev: %v", docRev)
-	t.Logf("Auth Debug String: %v", cookieAuth.DebugString())
+	t.Logf("Updated Auth: %v", cookieAuth.GetUpdatedAuth()["AuthSession"])
 	//Delete the user session
 	err = conn.DestroySession(cookieAuth)
 	errorify(t, err)
