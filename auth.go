@@ -88,7 +88,9 @@ func (pta *PassThroughAuth) GetUpdatedAuth() map[string]string {
 //Set AuthSession Cookie
 func (ca *CookieAuth) GetUpdatedAuth() map[string]string {
 	am := make(map[string]string)
-	am["AuthSession"] = ca.UpdatedAuthToken
+	if ca.UpdatedAuthToken != "" {
+		am["AuthSession"] = ca.UpdatedAuthToken
+	}
 	return am
 }
 
