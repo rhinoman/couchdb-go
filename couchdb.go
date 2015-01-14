@@ -100,6 +100,21 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 	return err
 }
 
+//Set a CouchDB configuration option
+func (conn *Connection) SetConfig(section string,
+	option string, value string, auth Auth) error {
+	url, err := buildUrl("_config", section, option)
+	if err != nil {
+		return err
+	}
+	body := strings.NewReader("\"" + value + "\"")
+	resp, err := conn.request("PUT", url, body, nil, auth)
+	if err == nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
 type UserRecord struct {
 	Name     string   `json:"name"`
 	Password string   `json:"password,omitempty"`

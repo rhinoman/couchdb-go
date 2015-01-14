@@ -442,6 +442,12 @@ func TestSessions(t *testing.T) {
 	errorify(t, err)
 }
 
+func TestSetConfig(t *testing.T) {
+	conn := getConnection(t)
+	err := conn.SetConfig("couch_httpd_auth", "timeout", "30", adminAuth)
+	errorify(t, err)
+}
+
 func TestDesignDocs(t *testing.T) {
 	conn := getConnection(t)
 	dbName := createTestDb(t)
