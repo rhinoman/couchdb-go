@@ -32,6 +32,18 @@ type ViewResponse struct {
 	Rows      []ViewResult `json:"rows,omitempty"`
 }
 
+type MultiReadResponse struct {
+	TotalRows int            `json:"total_rows"`
+	Offset    int            `json:"offset"`
+	Rows      []MultiReadRow `json:"rows"`
+}
+
+type MultiReadRow struct {
+	Id  string       `json:"id"`
+	Key string       `json:"key"`
+	Doc TestDocument `json:"doc"`
+}
+
 type ListResult struct {
 	Id  string       `json:"id"`
 	Key TestDocument `json:"key"`
@@ -261,6 +273,40 @@ func TestRead(t *testing.T) {
 	t.Logf("Document Rev: %v\n", rev)
 	t.Logf("Document Title: %v\n", emptyDoc.Title)
 	t.Logf("Document Note: %v\n", emptyDoc.Note)
+	deleteTestDb(t, dbName)
+}
+
+func TestMultiRead(t *testing.T) {
+	dbName := createTestDb(t)
+	conn := getConnection(t)
+	db := conn.SelectDB(dbName, nil)
+	//Create a test doc
+	theDoc := TestDocument{
+		Title: "My Document",
+		Note:  "Time to read",
+	}
+	//Save it
+	theId := getUuid()
+	_, err := db.Save(theDoc, theId, "")
+	errorify(t, err)
+	//Create another test doc
+	theOtherDoc := TestDocument{
+		Title: "My Other Document",
+		Note:  "TIme to unread",
+	}
+	//Save it
+	otherId := getUuid()
+	_, err = db.Save(theOtherDoc, otherId, "")
+	errorify(t, err)
+	//Now, try to read them
+	readDocs := MultiReadResponse{}
+	keys := []string{theId, otherId}
+	err = db.ReadMultiple(keys, &readDocs)
+	errorify(t, err)
+	t.Logf("\nThe Docs! %v", readDocs)
+	if len(readDocs.Rows) != 2 {
+		t.Errorf("Should be 2 results!")
+	}
 	deleteTestDb(t, dbName)
 }
 

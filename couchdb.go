@@ -375,11 +375,39 @@ func (db *Database) Read(id string, doc interface{}, params *url.Values) (string
 		return "", err
 	}
 	defer resp.Body.Close()
-	err = parseBody(resp, &doc)
-	if err != nil {
+	if err = parseBody(resp, &doc); err != nil {
 		return "", err
 	}
 	return getRevInfo(resp)
+}
+
+//Fetches multiple documents in a single request given a set of arbitrary _ids
+func (db *Database) ReadMultiple(ids []string, results interface{}) error {
+	type RequestBody struct {
+		Keys []string `json:"keys"`
+	}
+	parameters := url.Values{}
+	parameters.Set("include_docs", "true")
+	url, err := buildParamUrl(parameters, db.dbName, "_all_docs")
+	if err != nil {
+		return err
+	}
+	var headers = make(map[string]string)
+	reqBody := RequestBody{Keys: ids}
+	requestBody, err := encodeData(reqBody)
+	if err != nil {
+		return err
+	}
+	headers["Content-Type"] = "application/json"
+	headers["Accept"] = "application/json"
+	if resp, err :=
+		db.connection.request("POST", url, requestBody,
+			headers, db.auth); err == nil {
+		defer resp.Body.Close()
+		return parseBody(resp, &results)
+	} else {
+		return err
+	}
 }
 
 //Deletes a document.

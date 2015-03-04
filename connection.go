@@ -45,10 +45,10 @@ func (conn *connection) processResponse(numTries int,
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		errStr := err.Error()
-		//Because sometimes couchdb rudely
-		//slams the connection shut and we get a race condition
-		//Of course, Go http presents one of two possibilities
-		//for error strings, so we check for both.
+		// Because sometimes couchdb rudely
+		// slams the connection shut and we get a race condition.
+		// Of course, Go http presents one of two possibilities
+		// for error strings, so we check for both.
 		if (strings.Contains(errStr, "EOF") ||
 			strings.Contains(errStr, "broken connection")) && numTries < 3 {
 			//wait a bit and try again
