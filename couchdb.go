@@ -160,6 +160,12 @@ func (conn *Connection) GrantRole(username string, role string,
 		return "", errors.New("Type Error")
 	}
 	userRoles := userMap["roles"].([]interface{})
+	//Check if our role is already in the array, so we don't add it twice
+	for _, r := range userRoles {
+		if r == role {
+			return rev, nil
+		}
+	}
 	userMap["roles"] = append(userRoles, role)
 	return userDb.Save(&userMap, namestring, rev)
 }
@@ -183,14 +189,20 @@ func (conn *Connection) RevokeRole(username string, role string,
 		return "", errors.New("Type Error")
 	}
 	userRoles := userMap["roles"].([]interface{})
+	found := false
 	for i, r := range userRoles {
 		if r == role {
 			userRoles = append(userRoles[:i], userRoles[i+1:]...)
+			found = true
 			break
 		}
 	}
 	userMap["roles"] = userRoles
-	return userDb.Save(&userMap, namestring, rev)
+	if found == false {
+		return "", nil
+	} else {
+		return userDb.Save(&userMap, namestring, rev)
+	}
 }
 
 type UserContext struct {
