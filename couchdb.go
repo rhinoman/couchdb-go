@@ -505,8 +505,8 @@ func (db *Database) DeleteAttachment(docId string, docRev string,
 }
 
 type Members struct {
-	Users []string `json:"users"`
-	Roles []string `json:"roles"`
+	Users []string `json:"names,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 type Security struct {
