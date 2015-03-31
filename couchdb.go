@@ -554,6 +554,65 @@ func (db *Database) SaveSecurity(sec Security) error {
 	return err
 }
 
+// Security helper function.
+// Adds a role to a database security doc.
+func (db *Database) AddRole(role string, isAdmin bool) error {
+	sec, err := db.GetSecurity()
+	if err != nil {
+		return err
+	}
+	roles := func() *[]string {
+		if isAdmin {
+			return &sec.Admins.Roles
+		} else {
+			return &sec.Members.Roles
+		}
+	}
+	//Make sure the role isn't already there (couchdb will let you add it twice :/ )
+	for _, r := range *roles() {
+		if r == role {
+			//already there, just return
+			return nil
+		}
+	}
+	rolesarr := roles()
+	*rolesarr = append(*rolesarr, role)
+	return db.SaveSecurity(*sec)
+}
+
+// Security helper function.
+// Removes a role from a database security doc.
+func (db *Database) RemoveRole(role string) error {
+	sec, err := db.GetSecurity()
+	if err != nil {
+		return err
+	}
+	remove := func(isAdmin bool) bool {
+		var rolesPtr *[]string
+		if isAdmin {
+			rolesPtr = &sec.Admins.Roles
+		} else {
+			rolesPtr = &sec.Members.Roles
+		}
+		roles := *rolesPtr
+		for i, r := range roles {
+			if r == role {
+				*rolesPtr = append(roles[:i], roles[i+1:]...)
+				return true
+			}
+		}
+		return false
+	}
+	var removed bool = false
+	if removed = remove(false); !removed {
+		removed = remove(true)
+	}
+	if removed {
+		return db.SaveSecurity(*sec)
+	}
+	return nil
+}
+
 //Get the results of a view.
 func (db *Database) GetView(designDoc string, view string,
 	results interface{}, params *url.Values) error {

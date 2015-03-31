@@ -445,6 +445,10 @@ func TestSecurity(t *testing.T) {
 	}
 	err := db.SaveSecurity(security)
 	errorify(t, err)
+	err = db.AddRole("sales", false)
+	errorify(t, err)
+	err = db.AddRole("uberboss", true)
+	errorify(t, err)
 	sec, err := db.GetSecurity()
 	t.Logf("Security: %v\n", sec)
 	if sec.Admins.Users[0] != "bossman" {
@@ -453,7 +457,27 @@ func TestSecurity(t *testing.T) {
 	if sec.Admins.Roles[0] != "boss" {
 		t.Fail()
 	}
+	if sec.Admins.Roles[1] != "uberboss" {
+		t.Errorf("\nAdmin Roles nto right! %v\n", sec.Admins.Roles[1])
+	}
+	if sec.Members.Roles[1] != "sales" {
+		t.Errorf("\nRoles not right! %v\n", sec.Members.Roles[1])
+	}
 	errorify(t, err)
+	err = db.RemoveRole("sales")
+	errorify(t, err)
+	err = db.RemoveRole("uberboss")
+	errorify(t, err)
+	sec, err = db.GetSecurity()
+	t.Logf("Secuirty: %v\n", sec)
+	if len(sec.Members.Roles) > 1 {
+		t.Errorf("\nThe Role was not removed: %v\n", sec.Members.Roles)
+	} else if sec.Members.Roles[0] == "sales" {
+		t.Errorf("\nThe roles are all messed up: %v\n", sec.Members.Roles)
+	}
+	if len(sec.Admins.Roles) > 1 {
+		t.Errorf("\nThe Admin Role was not removed: %v\n", sec.Admins.Roles)
+	}
 	deleteTestDb(t, dbName)
 }
 
