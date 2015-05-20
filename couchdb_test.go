@@ -468,6 +468,9 @@ func TestSecurity(t *testing.T) {
 	errorify(t, err)
 	err = db.RemoveRole("uberboss")
 	errorify(t, err)
+	//try removing a role that ain't there
+	err = db.RemoveRole("WHATROLE")
+	errorify(t, err)
 	sec, err = db.GetSecurity()
 	t.Logf("Secuirty: %v\n", sec)
 	if len(sec.Members.Roles) > 1 {

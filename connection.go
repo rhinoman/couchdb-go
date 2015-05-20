@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
@@ -37,6 +38,22 @@ func (conn *connection) request(method, path string,
 		auth.updateAuth(resp)
 	}
 	return resp, err
+}
+
+//Returns a result from couchdb directly to a requesting client
+//Useful for downloading large files
+func (conn *connection) reverseProxyRequest(w http.ResponseWriter,
+	r *http.Request, path string, auth Auth) error {
+	target, err := url.Parse(conn.url + path)
+	if err != nil {
+		return err
+	}
+	if auth != nil {
+		auth.AddAuthHeaders(r)
+	}
+	rp := httputil.NewSingleHostReverseProxy(target)
+	rp.ServeHTTP(w, r)
+	return nil
 }
 
 func (conn *connection) processResponse(numTries int,

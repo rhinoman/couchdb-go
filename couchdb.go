@@ -486,6 +486,24 @@ func (db *Database) GetAttachment(docId string, docRev string,
 	return resp.Body, nil
 }
 
+//Fetches an attachment and proxies the result
+func (db *Database) GetAttachmentByProxy(docId string, docRev string,
+	attType string, attName string, r *http.Request, w http.ResponseWriter) error {
+	path, err := buildUrl(db.dbName, docId, attName)
+	if err != nil {
+		return err
+	}
+	var headers = make(map[string]string)
+	headers["Accept"] = attType
+	if docRev != "" {
+		headers["If-Match"] = docRev
+	}
+	for k, v := range headers {
+		r.Header.Set(k, v)
+	}
+	return db.connection.reverseProxyRequest(w, r, path, db.auth)
+}
+
 //Deletes an attachment
 func (db *Database) DeleteAttachment(docId string, docRev string,
 	attName string) (string, error) {
