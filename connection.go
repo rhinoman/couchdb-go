@@ -44,16 +44,33 @@ func (conn *connection) request(method, path string,
 //Useful for downloading large files
 func (conn *connection) reverseProxyRequest(w http.ResponseWriter,
 	r *http.Request, path string, auth Auth) error {
-	target, err := url.Parse(conn.url + path)
+	target, err := url.Parse(conn.url)
 	if err != nil {
 		return err
 	}
 	if auth != nil {
 		auth.AddAuthHeaders(r)
 	}
-	rp := httputil.NewSingleHostReverseProxy(target)
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+		req.URL.Host = target.Host
+		req.URL.Path = singleJoiningSlash(target.Path, path)
+	}
+	rp := &httputil.ReverseProxy{Director: director}
 	rp.ServeHTTP(w, r)
 	return nil
+}
+
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
 }
 
 func (conn *connection) processResponse(numTries int,
