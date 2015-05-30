@@ -330,9 +330,13 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 	if rev != "" {
 		headers["If-Match"] = rev
 	}
-	data, err := encodeData(doc)
+	data, numBytes, err := encodeData(doc)
 	if err != nil {
 		return "", err
+	}
+	headers["Content-Length"] = strconv.Itoa(numBytes)
+	if numBytes > 4000 {
+		headers["Expect"] = "100-continue"
 	}
 	resp, err := db.connection.request("PUT", url, data, headers, db.auth)
 	if err != nil {
@@ -406,11 +410,15 @@ func (db *Database) ReadMultiple(ids []string, results interface{}) error {
 	}
 	var headers = make(map[string]string)
 	reqBody := RequestBody{Keys: ids}
-	requestBody, err := encodeData(reqBody)
+	requestBody, numBytes, err := encodeData(reqBody)
 	if err != nil {
 		return err
 	}
 	headers["Content-Type"] = "application/json"
+	headers["Content-Length"] = strconv.Itoa(numBytes)
+	if numBytes > 4000 {
+		headers["Expect"] = "100-continue"
+	}
 	headers["Accept"] = "application/json"
 	if resp, err :=
 		db.connection.request("POST", url, requestBody,
@@ -456,6 +464,7 @@ func (db *Database) SaveAttachment(docId string,
 	headers["Accept"] = "application/json"
 	headers["Content-Type"] = attType
 	headers["If-Match"] = docRev
+	headers["Expect"] = "100-continue"
 
 	resp, err := db.connection.request("PUT", url, attContent, headers, db.auth)
 	if err != nil {
@@ -561,9 +570,13 @@ func (db *Database) SaveSecurity(sec Security) error {
 	}
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
-	data, err := encodeData(sec)
+	data, numBytes, err := encodeData(sec)
 	if err != nil {
 		return err
+	}
+	headers["Content-Length"] = strconv.Itoa(numBytes)
+	if numBytes > 4000 {
+		headers["Expect"] = "100-continue"
 	}
 	resp, err := db.connection.request("PUT", url, data, headers, db.auth)
 	if err == nil {

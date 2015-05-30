@@ -2,9 +2,12 @@ package couchdb_test
 
 import (
 	"bytes"
+	//"encoding/json"
 	"github.com/rhinoman/couchdb-go"
 	"github.com/twinj/uuid"
 	"io/ioutil"
+	"math/rand"
+	//"net/http"
 	"strconv"
 	"testing"
 	"time"
@@ -106,6 +109,16 @@ func deleteTestDb(t *testing.T, dbName string) {
 	errorify(t, err)
 }
 
+func genRandomText(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
 func createLotsDocs(t *testing.T, db *couchdb.Database) {
 	for i := 0; i < 10; i++ {
 		id := getUuid()
@@ -171,6 +184,7 @@ func TestCreateDB(t *testing.T) {
 	err = conn.DeleteDB("testcreatedb", adminAuth)
 	errorify(t, err)
 }
+
 func TestSave(t *testing.T) {
 	dbName := createTestDb(t)
 	conn := getConnection(t)
@@ -227,7 +241,7 @@ func TestAttachment(t *testing.T) {
 	t.Logf("New Document Title: %v\n", theDoc.Title)
 	t.Logf("New Document Note: %v\n", theDoc.Note)
 	//Create some content
-	content := []byte("This is my attachment")
+	content := []byte("THIS IS MY ATTACHMENT")
 	contentReader := bytes.NewReader(content)
 	//Now Add an attachment
 	uRev, err := db.SaveAttachment(theId, rev, "attachment", "text/plain", contentReader)
@@ -241,7 +255,7 @@ func TestAttachment(t *testing.T) {
 	errorify(t, err)
 	t.Logf("how much data: %v\n", len(theBytes))
 	data := string(theBytes[:])
-	if data != "This is my attachment" {
+	if data != "THIS IS MY ATTACHMENT" {
 		t.Fail()
 	}
 	t.Logf("The data: %v\n", data)
@@ -502,7 +516,7 @@ func TestSessions(t *testing.T) {
 	cookieAuth, err := conn.CreateSession("turd.ferguson", "password")
 	errorify(t, err)
 	//sleep
-	time.Sleep(time.Duration(5 * time.Second))
+	time.Sleep(time.Duration(2 * time.Second))
 	//Create something
 	db := conn.SelectDB(dbName, cookieAuth)
 	theId := getUuid()
@@ -586,4 +600,42 @@ func TestDesignDocs(t *testing.T) {
 	}
 	deleteTestDb(t, dbName)
 
+}
+
+//Test for a specific situation I've been having trouble with
+func TestAngryCouch(t *testing.T) {
+
+	testDoc1 := TestDocument{
+		Title: "Test Doc 1",
+		Note:  genRandomText(8000),
+	}
+	testDoc2 := TestDocument{
+		Title: "Test Doc 2",
+		Note:  genRandomText(1000),
+	}
+
+	dbName := createTestDb(t)
+	defer deleteTestDb(t, dbName)
+	conn := getConnection(t)
+	db := conn.SelectDB(dbName, nil)
+	//client := &http.Client{}
+	id1 := getUuid()
+	id2 := getUuid()
+	/*req, err := http.NewRequest(
+		"PUT",
+		"http://localhost:5984/"+dbName+"/"+id1,
+		bytes.NewReader(testBody1),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Expect", "100-continue")*/
+	rev, err := db.Save(testDoc1, id1, "")
+	//resp, err := client.Do(req)
+	errorify(t, err)
+	//defer resp.Body.Close()
+	t.Logf("Doc 1 Rev: %v\n", rev)
+	errorify(t, err)
+	rev, err = db.Save(testDoc2, id2, "")
+	t.Logf("Doc 2 Rev: %v\n", rev)
+	errorify(t, err)
 }

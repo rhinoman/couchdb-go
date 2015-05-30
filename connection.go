@@ -75,7 +75,6 @@ func singleJoiningSlash(a, b string) string {
 
 func (conn *connection) processResponse(numTries int,
 	req *http.Request) (*http.Response, error) {
-
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		errStr := err.Error()
@@ -86,6 +85,7 @@ func (conn *connection) processResponse(numTries int,
 		if (strings.Contains(errStr, "EOF") ||
 			strings.Contains(errStr, "broken connection")) && numTries < 3 {
 			//wait a bit and try again
+			fmt.Printf("\nERROR! %v\n", errStr)
 			time.Sleep(10 * time.Millisecond)
 			numTries += 1
 			return conn.processResponse(numTries, req)
@@ -133,16 +133,17 @@ func parseBody(resp *http.Response, o interface{}) error {
 	}
 }
 
-//encodes a struct to JSON and returns it as a buffer
-func encodeData(o interface{}) (io.Reader, error) {
+// encodes a struct to JSON and returns an io.Reader,
+// the buffer size, and an error (if any)
+func encodeData(o interface{}) (io.Reader, int, error) {
 	if o == nil {
-		return nil, nil
+		return nil, 0, nil
 	}
 	buf, err := json.Marshal(&o)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	} else {
-		return bytes.NewReader(buf), nil
+		return bytes.NewReader(buf), len(buf), nil
 	}
 }
 
