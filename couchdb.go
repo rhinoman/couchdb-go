@@ -335,6 +335,14 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 		return "", err
 	}
 	headers["Content-Length"] = strconv.Itoa(numBytes)
+	//Yes, this needs to be here.
+	//Yes, I know the Golang http.Client doesn't support expect/continue
+	//This is here to work around a bug in CouchDB.  It shouldn't work, and yet it does.
+	//See: http://stackoverflow.com/questions/30541591/large-put-requests-from-go-to-couchdb
+	//Also, I filed a bug report: https://issues.apache.org/jira/browse/COUCHDB-2704
+	//Go net/http needs to support the HTTP/1.1 spec, or CouchDB needs to get fixed.
+	//If either of those happens in the future, I can revisit this.
+	//Unless I forget, which I'm sure I will.
 	if numBytes > 4000 {
 		headers["Expect"] = "100-continue"
 	}
