@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 )
 
 type bulkDoc struct {
@@ -114,7 +115,7 @@ func (b *BulkDocument) Commit() ([]BulkDocumentResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		// headers["Content-Length"] = strconv.Itoa(numBytes)
+		headers["Content-Length"] = strconv.Itoa(numBytes)
 		//Yes, this needs to be here.
 		//Yes, I know the Golang http.Client doesn't support expect/continue
 		//This is here to work around a bug in CouchDB.  It shouldn't work, and yet it does.
