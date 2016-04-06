@@ -347,7 +347,8 @@ func (db *Database) Compact() (resp string, e error) {
 	emtpyBody := ""
 
 	dbResponse, err := db.connection.request("POST", url, strings.NewReader(emtpyBody), headers, db.auth)
-
+    defer dbResponse.Body.Close()
+    
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(dbResponse.Body)
 	strResp := buf.String()
