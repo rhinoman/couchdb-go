@@ -151,7 +151,7 @@ func encodeData(o interface{}) (io.Reader, int, error) {
 func parseError(resp *http.Response) error {
 	var couchReply struct{ Error, Reason string }
 	if resp.Request.Method != "HEAD" {
-		err := parseBody(resp, couchReply)
+		err := parseBody(resp, &couchReply)
 		if err != nil {
 			return fmt.Errorf("Unknown error accessing CouchDB: %v", err)
 		}
@@ -176,7 +176,7 @@ func buildString(pathSegments []string) string {
 	return urlString
 }
 
-func makeSegments(pathSegments []string) ([]string) {
+func makeSegments(pathSegments []string) []string {
 	segments := []string{}
 	for _, segment := range pathSegments {
 		segments = append(segments, strings.Split(segment, "/")...)
