@@ -72,7 +72,7 @@ type DesignDocument struct {
 
 func getUuid() string {
 	theUuid := uuid.NewV4()
-	return uuid.Formatter(theUuid, uuid.Clean)
+	return uuid.Formatter(theUuid, uuid.FormatHex)
 }
 
 func getConnection(t *testing.T) *couchdb.Connection {
