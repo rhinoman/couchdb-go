@@ -726,7 +726,7 @@ func (db *Database) GetView(designDoc string, view string,
 }
 
 //Get multiple results of a view.
-func (db *Database) GetMutipleFromView(designDoc string, view string,
+func (db *Database) GetMultipleFromView(designDoc string, view string,
 	results interface{}, keys []string) error {
 	var err error
 	var url string
