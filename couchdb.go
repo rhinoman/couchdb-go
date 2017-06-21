@@ -717,11 +717,47 @@ func (db *Database) GetView(designDoc string, view string,
 		return err
 	}
 	defer resp.Body.Close()
+
 	err = parseBody(resp, &results)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+//Get multiple results of a view.
+func (db *Database) GetMultipleFromView(designDoc string, view string,
+	results interface{}, keys []string) error {
+	var err error
+	var url string
+	type RequestBody struct {
+		Keys []string `json:"keys"`
+	}
+	url, err = buildUrl(db.dbName, "_design", designDoc, "_view", view)
+	if err != nil {
+		return err
+	}
+	fmt.Errorf("url: " + url)
+	var headers = make(map[string]string)
+	reqBody := RequestBody{Keys: keys}
+	requestBody, numBytes, err := encodeData(reqBody)
+	if err != nil {
+		return err
+	}
+	headers["Content-Type"] = "application/json"
+	headers["Content-Length"] = strconv.Itoa(numBytes)
+	if numBytes > 4000 {
+		headers["Expect"] = "100-continue"
+	}
+	headers["Accept"] = "application/json"
+	if resp, err :=
+		db.connection.request("POST", url, requestBody,
+			headers, db.auth); err == nil {
+		defer resp.Body.Close()
+		return parseBody(resp, &results)
+	} else {
+		return err
+	}
 }
 
 //Get the result of a list operation
