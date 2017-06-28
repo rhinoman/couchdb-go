@@ -790,6 +790,31 @@ func (db *Database) GetList(designDoc string, list string,
 	return nil
 }
 
+func (db *Database) Find(results interface{}, body []byte) error {
+	var err error
+	var url string
+	url, err = buildUrl(db.dbName, "_find")
+	if err != nil {
+		return err
+	}
+
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["Content-Type"] = "application/json"
+	resp, err := db.connection.request("POST", url, bytes.NewBuffer(body), headers, db.auth)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	err = parseBody(resp, &results)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //Save a design document.
 //If creating a new design doc, set rev to "".
 func (db *Database) SaveDesignDoc(name string,
