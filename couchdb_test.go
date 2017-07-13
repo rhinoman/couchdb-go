@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"encoding/json"
 )
 
 var timeout = time.Duration(500 * time.Millisecond)
@@ -57,6 +58,10 @@ type ListResponse struct {
 	TotalRows int          `json:"total_rows"`
 	Offset    int          `json:"offset"`
 	Rows      []ListResult `json:"rows,omitempty"`
+}
+
+type FindResponse struct {
+	Docs []TestDocument `json:"docs"`
 }
 
 type View struct {
@@ -664,4 +669,43 @@ func TestAngryCouch(t *testing.T) {
 	rev, err = db.Save(testDoc2, id2, "")
 	t.Logf("Doc 2 Rev: %v\n", rev)
 	errorify(t, err)
+}
+
+
+func TestFind(t *testing.T) {
+	conn := getConnection(t)
+	dbName := createTestDb(t)
+	db := conn.SelectDB(dbName, adminAuth)
+	createLotsDocs(t, db)
+
+	selector := `{"Note": {"$eq": "magenta"}}`
+
+	var selectorObj interface{}
+
+	err := json.Unmarshal([]byte(selector), &selectorObj)
+
+	if err != nil {
+		errorify(t, err)
+	}
+
+	//Get the results from find.
+	findResult := FindResponse{}
+
+	params := couchdb.FindQueryParams{Selector: &selectorObj}
+
+	err = db.Find(&findResult, &params)
+
+	if err != nil {
+		errorify(t, err)
+	}
+
+	if len(findResult.Docs) != 5 {
+		t.Logf("Find Results Length: %v\n", len(findResult.Docs))
+		t.Fail()
+	} else {
+		t.Logf("Results: %v\n", len(findResult.Docs))
+	}
+
+	deleteTestDb(t, dbName)
+
 }

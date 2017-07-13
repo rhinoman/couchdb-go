@@ -22,6 +22,8 @@ type Database struct {
 	auth       Auth
 }
 
+
+
 //Creates a regular http connection.
 //Timeout sets the timeout for the http Client
 func NewConnection(address string, port int,
@@ -783,6 +785,48 @@ func (db *Database) GetList(designDoc string, list string,
 		return err
 	}
 	defer resp.Body.Close()
+	err = parseBody(resp, &results)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type FindQueryParams struct {
+	Selector interface{} `json:"selector"`
+	Limit int `json:"limit,omitempty"`
+	Skip int `json:"skip,omitempty"`
+	Sort interface{} `json:"sort,omitempty"`
+	Fields []string `json:"fields,omitempty"`
+	UseIndex interface{} `json:"user_index,omitempty"`
+
+}
+
+func (db *Database) Find(results interface{}, params *FindQueryParams) error {
+	var err error
+	var url string
+	url, err = buildUrl(db.dbName, "_find")
+	if err != nil {
+		return err
+	}
+
+
+	requestBody, numBytes, err := encodeData(params)
+	if err != nil {
+		return err
+	}
+
+	var headers = make(map[string]string)
+	headers["Content-Type"] = "application/json"
+	headers["Accept"] = "application/json"
+	headers["Content-Length"] = strconv.Itoa(numBytes)
+
+	resp, err := db.connection.request("POST", url, requestBody, headers, db.auth)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
 	err = parseBody(resp, &results)
 	if err != nil {
 		return err
