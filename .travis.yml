@@ -5,7 +5,7 @@ go:
 sudo: required
 dist: trusty
 before_install:
- - ./couchdb2.0-install.sh
+ - ./couchdb2.1-install.sh
 before_script:
  - curl -X PUT http://127.0.0.1:5984/_config/admins/adminuser -d '"password"'
 script:
