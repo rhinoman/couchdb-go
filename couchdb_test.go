@@ -3,7 +3,7 @@ package couchdb_test
 import (
 	"bytes"
 	//"encoding/json"
-	"github.com/rhinoman/couchdb-go"
+	"github.com/fjace05/couchdb-go"
 	"github.com/twinj/uuid"
 	"io/ioutil"
 	"math/rand"
