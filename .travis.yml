@@ -7,7 +7,7 @@ dist: trusty
 before_install:
  - ./couchdb2.1-install.sh
 before_script:
- - curl -X PUT http://127.0.0.1:5984/_config/admins/adminuser -d '"password"'
+ - curl -X PUT http://127.0.0.1:5984/_node/couchdb@localhost/_config/admins/adminuser -d '"password"'
 script:
  - go get github.com/twinj/uuid
  - go test -v ./...
