@@ -3,6 +3,8 @@ couchdb-go
 
 [![Build Status](https://travis-ci.org/rhinoman/couchdb-go.svg?branch=master)](https://travis-ci.org/rhinoman/couchdb-go)
 
+**NOTE**:  Use the v1.0 Tag for CouchDB 1.0.  The current master is being used for CouchDB 2.x work (still a work in progress).
+
 Description
 -----------
 
