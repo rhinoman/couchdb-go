@@ -11,8 +11,8 @@ cd temp
 
 wget http://www.trieuvan.com/apache/couchdb/source/2.1.0/apache-couchdb-2.1.0.tar.gz
 
-tar -xf apache-couchdb-2.1.0.tar.gz
-cd apache-couchdb-2.1.0.tar.gz
+tar -xzf apache-couchdb-2.1.0.tar.gz
+cd apache-couchdb-2.1.0
 ./configure
 make release
 nohup ./rel/couchdb/bin/couchdb > /dev/null &
@@ -21,4 +21,4 @@ curl -X PUT http://127.0.0.1:5984/_users
 
 curl -X PUT http://127.0.0.1:5984/_replicator
 
-
+cd ..
