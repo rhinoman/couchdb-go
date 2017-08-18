@@ -17,6 +17,9 @@ cd apache-couchdb-2.1.0
 make release
 nohup ./rel/couchdb/bin/couchdb > /dev/null &
 
+#Give couch a chance to start
+sleep 15
+
 curl -X PUT http://127.0.0.1:5984/_users
 
 curl -X PUT http://127.0.0.1:5984/_replicator
