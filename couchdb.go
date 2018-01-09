@@ -324,14 +324,21 @@ func (conn *Connection) DeleteUser(username string, rev string, auth Auth) (stri
 }
 
 //Select a Database.
-//TODO: Perhaps verify dbName exists in couchdb?
-//Or just do the fast thing here and let subsequent queries fail if the user supplies an incorrect dbname.
 func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 	return &Database{
 		dbName:     dbName,
 		connection: conn,
 		auth:       auth,
 	}
+}
+
+//DbExists checks if the database exists
+func (db *Database) DbExists() error {
+	resp, err := db.connection.request("HEAD", "/" + db.dbName, nil, nil, db.auth)
+	if err != nil {
+		resp.Body.Close()
+	}
+	return err
 }
 
 //Compact the current database.
