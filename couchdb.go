@@ -104,7 +104,7 @@ func (conn *Connection) DeleteDB(name string, auth Auth) error {
 //Set a CouchDB configuration option
 func (conn *Connection) SetConfig(section string,
 	option string, value string, auth Auth) error {
-	url, err := buildUrl("_config", section, option)
+	url, err := buildUrl("_node/_local/_config", section, option)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (conn *Connection) SetConfig(section string,
 //Gets a CouchDB configuration option
 func (conn *Connection) GetConfigOption(section string,
 	option string, auth Auth) (string, error) {
-	url, err := buildUrl("_config", section, option)
+	url, err := buildUrl("_node/_local/_config", section, option)
 	if err != nil {
 		return "", err
 	}
