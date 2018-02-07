@@ -22,8 +22,6 @@ type Database struct {
 	auth       Auth
 }
 
-
-
 //Creates a regular http connection.
 //Timeout sets the timeout for the http Client
 func NewConnection(address string, port int,
@@ -334,7 +332,7 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 
 //DbExists checks if the database exists
 func (db *Database) DbExists() error {
-	resp, err := db.connection.request("HEAD", "/" + db.dbName, nil, nil, db.auth)
+	resp, err := db.connection.request("HEAD", "/"+db.dbName, nil, nil, db.auth)
 	if err != nil {
 		resp.Body.Close()
 	}
@@ -351,13 +349,13 @@ func (db *Database) Compact() (resp string, e error) {
 
 	var headers = make(map[string]string)
 	headers["Accept"] = "application/json"
-    headers["Content-Type"] = "application/json"
+	headers["Content-Type"] = "application/json"
 
 	emtpyBody := ""
 
 	dbResponse, err := db.connection.request("POST", url, strings.NewReader(emtpyBody), headers, db.auth)
-    defer dbResponse.Body.Close()
-    
+	defer dbResponse.Body.Close()
+
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(dbResponse.Body)
 	strResp := buf.String()
@@ -801,12 +799,11 @@ func (db *Database) GetList(designDoc string, list string,
 
 type FindQueryParams struct {
 	Selector interface{} `json:"selector"`
-	Limit int `json:"limit,omitempty"`
-	Skip int `json:"skip,omitempty"`
-	Sort interface{} `json:"sort,omitempty"`
-	Fields []string `json:"fields,omitempty"`
+	Limit    int         `json:"limit,omitempty"`
+	Skip     int         `json:"skip,omitempty"`
+	Sort     interface{} `json:"sort,omitempty"`
+	Fields   []string    `json:"fields,omitempty"`
 	UseIndex interface{} `json:"user_index,omitempty"`
-
 }
 
 func (db *Database) Find(results interface{}, params *FindQueryParams) error {
@@ -816,7 +813,6 @@ func (db *Database) Find(results interface{}, params *FindQueryParams) error {
 	if err != nil {
 		return err
 	}
-
 
 	requestBody, numBytes, err := encodeData(params)
 	if err != nil {

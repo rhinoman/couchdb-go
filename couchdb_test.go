@@ -668,7 +668,6 @@ func TestAngryCouch(t *testing.T) {
 	errorify(t, err)
 }
 
-
 func TestFind(t *testing.T) {
 	conn := getConnection(t)
 	dbName := createTestDb(t)

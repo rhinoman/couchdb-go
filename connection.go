@@ -117,8 +117,8 @@ func (err *Error) Error() string {
 func getRevInfo(resp *http.Response) (string, error) {
 	if rev := resp.Header.Get("ETag"); rev == "" {
 		var dbResponse struct {
-			Ok bool `json:"ok"`
-			Id string `json:"id"`
+			Ok  bool   `json:"ok"`
+			Id  string `json:"id"`
 			Rev string `json:"rev"`
 		}
 
