@@ -9,10 +9,10 @@ sudo apt-get --no-install-recommends -y install \
 mkdir temp
 cd temp
 
-wget http://www.trieuvan.com/apache/couchdb/source/2.1.0/apache-couchdb-2.1.0.tar.gz
+wget http://www.trieuvan.com/apache/couchdb/source/2.1.1/apache-couchdb-2.1.1.tar.gz
 
-tar -xzf apache-couchdb-2.1.0.tar.gz
-cd apache-couchdb-2.1.0
+tar -xzf apache-couchdb-2.1.1.tar.gz
+cd apache-couchdb-2.1.1
 ./configure
 make release
 nohup ./rel/couchdb/bin/couchdb > /dev/null &
