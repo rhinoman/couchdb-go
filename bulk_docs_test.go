@@ -1,4 +1,4 @@
-package couchdb_test
+package couchdb
 
 import "testing"
 
