@@ -403,7 +403,7 @@ func (db *Database) Save(doc interface{}, id string, rev string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return getRevInfo(resp)
 }
 
@@ -427,7 +427,7 @@ func (db *Database) Copy(fromId string, fromRev string, toId string) (string, er
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return getRevInfo(resp)
 }
 
@@ -506,7 +506,7 @@ func (db *Database) Delete(id string, rev string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return getRevInfo(resp)
 }
 
@@ -531,7 +531,7 @@ func (db *Database) SaveAttachment(docId string,
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return getRevInfo(resp)
 }
 
@@ -588,7 +588,7 @@ func (db *Database) DeleteAttachment(docId string, docRev string,
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return getRevInfo(resp)
 }
 
