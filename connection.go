@@ -116,6 +116,17 @@ func (err *Error) Error() string {
 //extracts rev code from header
 func getRevInfo(resp *http.Response) (string, error) {
 	if rev := resp.Header.Get("ETag"); rev == "" {
+		var dbResponse struct {
+			Ok  bool   `json:"ok"`
+			Id  string `json:"id"`
+			Rev string `json:"rev"`
+		}
+		// if ETag header isn't present, attempt to get the rev from the response body
+		// see: https://issues.apache.org/jira/browse/COUCHDB-2853
+		json.NewDecoder(resp.Body).Decode(&dbResponse)
+		if dbResponse.Rev != "" {
+			return dbResponse.Rev, nil
+		}
 		return "", fmt.Errorf("CouchDB did not return rev info")
 	} else {
 		return rev[1 : len(rev)-1], nil

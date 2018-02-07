@@ -1,24 +1,21 @@
-package couchdb_test
+package couchdb
 
 import (
 	"bytes"
-	//"encoding/json"
-	"github.com/fjace05/couchdb-go"
+	"encoding/json"
 	"github.com/twinj/uuid"
 	"io/ioutil"
 	"math/rand"
-	//"net/http"
 	"strconv"
 	"testing"
 	"time"
-	"encoding/json"
 )
 
 var timeout = time.Duration(500 * time.Millisecond)
 var unittestdb = "unittestdb"
 var server = "127.0.0.1"
 var numDbs = 1
-var adminAuth = &couchdb.BasicAuth{Username: "adminuser", Password: "password"}
+var adminAuth = &BasicAuth{Username: "adminuser", Password: "password"}
 
 type TestDocument struct {
 	Title string
@@ -80,8 +77,8 @@ func getUuid() string {
 	return uuid.Formatter(theUuid, uuid.FormatHex)
 }
 
-func getConnection(t *testing.T) *couchdb.Connection {
-	conn, err := couchdb.NewConnection(server, 5984, timeout)
+func getConnection(t *testing.T) *Connection {
+	conn, err := NewConnection(server, 5984, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -89,9 +86,9 @@ func getConnection(t *testing.T) *couchdb.Connection {
 	return conn
 }
 
-/*func getAuthConnection(t *testing.T) *couchdb.Connection {
-	auth := couchdb.Auth{Username: "adminuser", Password: "password"}
-	conn, err := couchdb.NewConnection(server, 5984, timeout)
+/*func getAuthConnection(t *testing.T) *Connection {
+	auth := Auth{Username: "adminuser", Password: "password"}
+	conn, err := NewConnection(server, 5984, timeout)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.Fail()
@@ -124,7 +121,7 @@ func genRandomText(n int) string {
 	return string(b)
 }
 
-func createLotsDocs(t *testing.T, db *couchdb.Database) {
+func createLotsDocs(t *testing.T, db *Database) {
 	for i := 0; i < 10; i++ {
 		id := getUuid()
 		note := "purple"
@@ -154,7 +151,7 @@ func TestPing(t *testing.T) {
 }
 
 func TestBadPing(t *testing.T) {
-	conn, err := couchdb.NewConnection("unpingable", 1234, timeout)
+	conn, err := NewConnection("unpingable", 1234, timeout)
 	errorify(t, err)
 	pingErr := conn.Ping()
 	if pingErr == nil {
@@ -395,13 +392,13 @@ func TestUser(t *testing.T) {
 		t.Fail()
 	}
 	//check user can access db
-	db := conn.SelectDB(dbName, &couchdb.BasicAuth{"turd.ferguson", "password"})
+	db := conn.SelectDB(dbName, &BasicAuth{"turd.ferguson", "password"})
 	theId := getUuid()
 	docRev, err := db.Save(&TestDocument{Title: "My doc"}, theId, "")
 	errorify(t, err)
 	t.Logf("Granting role to user")
 	//check session info
-	authInfo, err := conn.GetAuthInfo(&couchdb.BasicAuth{"turd.ferguson", "password"})
+	authInfo, err := conn.GetAuthInfo(&BasicAuth{"turd.ferguson", "password"})
 	errorify(t, err)
 	t.Logf("AuthInfo: %v", authInfo)
 	if authInfo.UserCtx.Name != "turd.ferguson" {
@@ -413,7 +410,7 @@ func TestUser(t *testing.T) {
 	errorify(t, err)
 	t.Logf("Updated Rev: %v\n", rev)
 	//read the user
-	userData := couchdb.UserRecord{}
+	userData := UserRecord{}
 	rev, err = conn.GetUser("turd.ferguson", &userData, adminAuth)
 	errorify(t, err)
 	if len(userData.Roles) != 2 {
@@ -421,7 +418,7 @@ func TestUser(t *testing.T) {
 	}
 	t.Logf("Roles: %v", userData.Roles)
 	//check user can access db
-	docRev, err = db.Save(&TestDocument{Title: "My doc"}, getUuid(), docRev)
+	docRev, err = db.Save(&TestDocument{Title: "My doc"}, theId, docRev)
 	errorify(t, err)
 
 	//revoke a role
@@ -450,15 +447,15 @@ func TestSecurity(t *testing.T) {
 	dbName := createTestDb(t)
 	db := conn.SelectDB(dbName, adminAuth)
 
-	members := couchdb.Members{
+	members := Members{
 		Users: []string{"joe, bill"},
 		Roles: []string{"code monkeys"},
 	}
-	admins := couchdb.Members{
+	admins := Members{
 		Users: []string{"bossman"},
 		Roles: []string{"boss"},
 	}
-	security := couchdb.Security{
+	security := Security{
 		Members: members,
 		Admins:  admins,
 	}
@@ -671,7 +668,6 @@ func TestAngryCouch(t *testing.T) {
 	errorify(t, err)
 }
 
-
 func TestFind(t *testing.T) {
 	conn := getConnection(t)
 	dbName := createTestDb(t)
@@ -691,7 +687,7 @@ func TestFind(t *testing.T) {
 	//Get the results from find.
 	findResult := FindResponse{}
 
-	params := couchdb.FindQueryParams{Selector: &selectorObj}
+	params := FindQueryParams{Selector: &selectorObj}
 
 	err = db.Find(&findResult, &params)
 
