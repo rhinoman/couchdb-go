@@ -334,7 +334,9 @@ func (conn *Connection) SelectDB(dbName string, auth Auth) *Database {
 func (db *Database) DbExists() error {
 	resp, err := db.connection.request("HEAD", "/"+db.dbName, nil, nil, db.auth)
 	if err != nil {
-		resp.Body.Close()
+		if resp != nil {
+			resp.Body.Close()
+		}
 	}
 	return err
 }
