@@ -365,6 +365,78 @@ func (db *Database) Compact() (resp string, e error) {
 	return strResp, err
 }
 
+//Compact all the views of the current database.
+func (db *Database) CompactViews() (resp string, e error) {
+	type ResponseListViews struct {
+		Rows []struct{
+			Key string `json:"key"`
+		}
+	}
+
+	var params = make(url.Values)
+	params.Add("startkey", `"_design/"`)
+	params.Add("endkey", `"_design0"`)
+	params.Add("include_docs", "true")
+
+	// get all views
+	url, err := buildParamUrl(params, db.dbName, "_all_docs")
+	if err != nil {
+		return "", err
+	}
+
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["Content-Type"] = "application/json"
+
+	dbResponse, err := db.connection.request("GET", url, strings.NewReader(""), headers, db.auth)
+	if err != nil {
+		return "", err
+	}
+
+	defer dbResponse.Body.Close()
+
+	// loop through the database design documents and compact views
+	var respoMap = &ResponseListViews{}
+	if err = parseBody(dbResponse, respoMap); err != nil {
+		return "", err
+	}
+
+	for _, row := range respoMap.Rows {
+		db.CompactView(row.Key)
+	}
+
+	return
+}
+
+//Compact view of the current database
+func (db *Database) CompactView(name string) (resp string, e error) {
+	strs := strings.Split(name, "/")
+	if len(strs) > 1 {
+		name = strs[1]
+	}
+
+	url, err := buildUrl(db.dbName, "_compact", name)
+	if err != nil {
+		return
+	}
+
+	var headers = make(map[string]string)
+	headers["Accept"] = "application/json"
+	headers["Content-Type"] = "application/json"
+
+	dbResponse, err := db.connection.request("POST", url, strings.NewReader(""), headers, db.auth)
+	if err != nil {
+		return "", err
+	}
+
+	defer dbResponse.Body.Close()
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(dbResponse.Body)
+
+	return buf.String(), nil
+}
+
 //Save a document to the database.
 //If you're creating a new document, pass an empty string for rev.
 //If updating, you must specify the current rev.
